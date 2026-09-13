@@ -108,4 +108,8 @@ jobs:
       - run: ./gradlew genSources --no-daemon --console=plain
       - run: bash .github/ci_unzip_sources.sh
       - if: always()
+        run: |
+          MSG=$(find /tmp/mcsrc -iname '*TexturedModelData*' -o -iname '*ModelData.java' | head -5 | sed 's/^/FOUND: /' | python3 -c "import sys;print(sys.stdin.read().replace('%','%25').replace(chr(10),'%0A'))")
+          echo "::warning title=find-modeldata::$MSG"
+      - if: always()
         run: python3 .github/ci_dump_annotations.py ${{ matrix.shard }}
