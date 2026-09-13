@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -40,6 +41,9 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 					BiomeSource.CODEC.fieldOf("biome_source").forGetter(gen -> gen.biomeSource)
 			).apply(instance, BackroomsChunkGenerator::new));
 
+	/** Captured in {@link #createState} (the one hook handed the world seed). */
+	private long levelSeed;
+
 	public BackroomsChunkGenerator(BiomeSource biomeSource) {
 		super(biomeSource);
 	}
@@ -49,13 +53,16 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 		return CODEC;
 	}
 
-	/**
-	 * The world seed reaches generation through {@link RandomState} (in 1.21.1
-	 * chunk generators have no per-generator seed hook); the layout only holds
-	 * one long, so constructing it per call is essentially free.
-	 */
-	private static Level0Layout layout(RandomState random) {
-		return new Level0Layout(random.legacyLevelSeed());
+	@Override
+	public ChunkGeneratorStructureState createState(
+			net.minecraft.core.HolderLookup<net.minecraft.world.level.levelgen.structure.StructureSet> structureSets,
+			RandomState random, long seed) {
+		this.levelSeed = seed;
+		return super.createState(structureSets, random, seed);
+	}
+
+	private Level0Layout layout() {
+		return new Level0Layout(this.levelSeed);
 	}
 
 	@Override
@@ -104,7 +111,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 	@Override
 	public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState random,
 													StructureManager structures, ChunkAccess chunk) {
-		Level0Layout layout = layout(random);
+		Level0Layout layout = layout();
 		Heightmap ocean = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
 		Heightmap surface = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
 
@@ -178,7 +185,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
 	@Override
 	public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor level, RandomState random) {
-		Level0Layout layout = layout(random);
+		Level0Layout layout = layout();
 		int height = level.getHeight();
 		int minY = level.getMinBuildHeight();
 		BlockState[] states = new BlockState[height];

@@ -42,7 +42,6 @@ public class FluorescentBlock extends Block implements EntityBlock {
 	}
 
 	@Override
-	@Override
 	@Nullable
 	@SuppressWarnings("unchecked")
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,

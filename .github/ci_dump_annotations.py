@@ -149,11 +149,8 @@ if SHARD == 5:
 if SHARD == 6:
     full("net/minecraft/client/renderer/DimensionSpecialEffects.java")
     full("net/minecraft/client/model/HierarchicalModel.java")
-    grep("net/minecraft/client/model/EntityModel.java",
-         [r"public|protected"], before=0, after=1, rename="EntityModel-api2")
-    grep("net/minecraft/client/model/ModelPart.java",
-         [r"public ModelPart|public void resetPose|public ModelPart getChild|public float xRot|public float yRot|public float zRot"],
-         before=0, after=1, rename="ModelPart-api")
+    full("net/minecraft/client/model/geom/builders/TexturedModelData.java", rename="TexturedModelData-builders")
+    full("net/minecraft/client/model/geom/TexturedModelData.java", rename="TexturedModelData-geom")
     for f in ["LayerDefinition", "MeshDefinition", "PartDefinition", "CubeListBuilder", "PartPose"]:
         grep(f"net/minecraft/client/model/geom/builders/{f}.java",
              [r"public |public static "], before=0, after=3, rename=f)

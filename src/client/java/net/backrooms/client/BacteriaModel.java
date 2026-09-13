@@ -74,7 +74,7 @@ public class BacteriaModel extends HierarchicalModel<BacteriaEntity> {
 	}
 
 	public static TexturedModelData createBodyData() {
-		return createBodyLayer().bakeRoot();
+		return TexturedModelData.of(createBodyLayer());
 	}
 
 	@Override
@@ -101,7 +101,7 @@ public class BacteriaModel extends HierarchicalModel<BacteriaEntity> {
 		this.head.xRot += 0.12F;
 
 		// Lunge with both arms when attacking.
-		float lunge = Mth.sin(entity.attackTime * (float) Math.PI);
+		float lunge = Mth.sin(this.attackTime * (float) Math.PI);
 		this.leftArm.xRot -= lunge * 1.6F;
 		this.rightArm.xRot -= lunge * 1.6F;
 	}

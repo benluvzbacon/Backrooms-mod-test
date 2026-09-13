@@ -13,15 +13,15 @@ public final class ModCreativeTabs {
 
 	public static void initialize() {
 		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries ->
-				entries.accept(ModItems.BACTERIA_SPAWN_EGG));
+				entries.add(ModItems.BACTERIA_SPAWN_EGG));
 
 		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.BUILDING_BLOCKS).register(entries -> {
-			entries.accept(ModBlocks.WALLPAPER);
-			entries.accept(ModBlocks.WALLPAPER_DAMP);
-			entries.accept(ModBlocks.CARPET);
-			entries.accept(ModBlocks.CEILING_TILE);
-			entries.accept(ModBlocks.FOUNDATION);
-			entries.accept(ModBlocks.FLUORESCENT);
+			entries.add(ModBlocks.WALLPAPER);
+			entries.add(ModBlocks.WALLPAPER_DAMP);
+			entries.add(ModBlocks.CARPET);
+			entries.add(ModBlocks.CEILING_TILE);
+			entries.add(ModBlocks.FOUNDATION);
+			entries.add(ModBlocks.FLUORESCENT);
 		});
 	}
 }
