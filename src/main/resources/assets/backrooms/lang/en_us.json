@@ -1,0 +1,13 @@
+{
+  "block.backrooms.wallpaper": "Yellow Wallpaper",
+  "block.backrooms.wallpaper_damp": "Damp Wallpaper",
+  "block.backrooms.carpet": "Old Carpet",
+  "block.backrooms.ceiling_tile": "Acoustic Ceiling Tile",
+  "block.backrooms.foundation": "Foundation Slab",
+  "block.backrooms.fluorescent": "Fluorescent Fixture",
+  "item.backrooms.bacteria_spawn_egg": "Bacteria Spawn Egg",
+  "entity.backrooms.bacteria": "Bacteria",
+  "message.backrooms.enter": "The Backrooms",
+  "message.backrooms.enter.subtitle": "You noclip out of reality...",
+  "message.backrooms.equipped": "Sand placed on your head..."
+}

@@ -1,0 +1,28 @@
+{
+	"schemaVersion": 1,
+	"id": "backrooms",
+	"version": "${version}",
+	"name": "The Backrooms",
+	"description": "Put sand on your head and no-clip into the endless Backrooms.",
+	"authors": [
+		"Arena"
+	],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/backrooms/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.backrooms.Backrooms"
+		],
+		"client": [
+			"net.backrooms.client.BackroomsClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.0",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

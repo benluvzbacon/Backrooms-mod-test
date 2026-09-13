@@ -1,0 +1,35 @@
+{
+  "ambient.hum": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "backrooms:ambient/hum",
+        "stream": true
+      }
+    ]
+  },
+  "bacteria.ambient": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:bacteria/ambient"
+      }
+    ]
+  },
+  "bacteria.hurt": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:bacteria/hurt"
+      }
+    ]
+  },
+  "bacteria.death": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:bacteria/death"
+      }
+    ]
+  }
+}

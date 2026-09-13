@@ -1,0 +1,127 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        id: build
+        run: bash .github/ci_build.sh
+
+      - name: Report compile errors
+        if: always() && steps.build.outcome == 'failure'
+        run: |
+          python3 - <<'PY'
+          log = open('ci-out/build.log', errors='replace').read().splitlines()
+          pick = set()
+          for i, line in enumerate(log):
+              if 'error:' in line or 'FAILED' in line or 'What went wrong' in line:
+                  for j in range(max(0, i-2), min(len(log), i+8)):
+                      pick.add(j)
+          body = '\n'.join(log[i] for i in sorted(pick))[-14000:]
+          chunks, cur, n = [], [], 0
+          for line in body.splitlines():
+              if n + len(line) + 1 > 3500:
+                  chunks.append('\n'.join(cur)); cur=[]; n=0
+              cur.append(line); n += len(line)+1
+          if cur: chunks.append('\n'.join(cur))
+          for i, c in enumerate(chunks[:4]):
+              c = c.replace('%','%25').replace('\r','').replace('\n','%0A')
+              print(f"::error title=compile errors {i}::{c}")
+          PY
+
+      - name: Upload mod jars
+        if: always() && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backrooms-mod
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+  selftest:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: actions/setup-java@v5
+        with: { java-version: '21', distribution: 'temurin' }
+      - uses: gradle/actions/setup-gradle@v4
+      - name: EULA
+        run: mkdir -p run && printf 'eula=true\n' > run/eula.txt
+      - name: Headless in-engine self-test
+        id: selftest
+        timeout-minutes: 10
+        run: chmod +x ./gradlew && ./gradlew runServer -Pselftest --no-daemon --console=plain
+      - name: Publish self-test report
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          p='/tmp/backrooms-selftest.txt'
+          body=open(p).read() if os.path.exists(p) else 'SELFTEST DID NOT COMPLETE'
+          lvl='error' if not body.startswith('SELFTEST OK') else 'warning'
+          chunks=[body[i:i+3500] for i in range(0,len(body),3500)]
+          for i,c in enumerate(chunks[:4]):
+              c=c.replace('%','%25').replace('\r','').replace('\n','%0A')
+              print(f"::{lvl} title=selftest {i}::{c}")
+          PY
+
+  signatures-a:
+    needs: build
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: actions/setup-java@v5
+        with: { java-version: '21', distribution: 'temurin' }
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x ./gradlew
+      - run: ./gradlew genSources --no-daemon --console=plain
+      - run: bash .github/ci_unzip_sources.sh
+      - if: always()
+        run: python3 .github/ci_dump_annotations.py 0
+      - if: always()
+        run: python3 .github/ci_dump_annotations.py 5
+
+  signatures-b:
+    needs: build
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: actions/setup-java@v5
+        with: { java-version: '21', distribution: 'temurin' }
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x ./gradlew
+      - run: ./gradlew genSources --no-daemon --console=plain
+      - run: bash .github/ci_unzip_sources.sh
+      - if: always()
+        run: python3 .github/ci_dump_annotations.py 6
+      - if: always()
+        run: python3 .github/ci_dump_annotations.py 7
