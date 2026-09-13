@@ -128,6 +128,8 @@ if SHARD == 3:
 
 if SHARD == 5:
     grep(CG, [r"withSeed|getBaseColumn|abstract int getGenDepth|abstract CompletableFuture"], rename="ChunkGenerator-C")
+    grep("net/minecraft/world/level/levelgen/RandomState.java",
+         [r"public|seed"], before=0, after=1, rename="RandomState-api")
     grep("net/minecraft/world/level/chunk/ChunkAccess.java",
          [r"public BlockState setBlockState|public void setBlockEntity|public LevelChunkSection|getOrCreateSection|getSectionIndex|getSections\(|getOrCreateHeightmapUnprimed|getPos\("],
          rename="ChunkAccess-B")

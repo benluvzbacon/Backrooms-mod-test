@@ -78,7 +78,7 @@ public class BacteriaEntity extends Monster {
 	}
 
 	@Override
-	public float getAmbientSoundInterval() {
-		return 60.0F;
+	public int getAmbientSoundInterval() {
+		return 60;
 	}
 }

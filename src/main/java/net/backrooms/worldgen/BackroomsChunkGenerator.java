@@ -1,6 +1,5 @@
 package net.backrooms.worldgen;
 
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.backrooms.ModBlocks;
@@ -38,17 +37,11 @@ import java.util.concurrent.CompletableFuture;
 public class BackroomsChunkGenerator extends ChunkGenerator {
 	public static final MapCodec<BackroomsChunkGenerator> CODEC = RecordCodecBuilder.mapCodec(
 			instance -> instance.group(
-					BiomeSource.CODEC.fieldOf("biome_source").forGetter(gen -> gen.biomeSource),
-					Codec.LONG.lenientOptionalFieldOf("world_seed", 0L).forGetter(gen -> gen.seed)
+					BiomeSource.CODEC.fieldOf("biome_source").forGetter(gen -> gen.biomeSource)
 			).apply(instance, BackroomsChunkGenerator::new));
 
-	private final long seed;
-	private final Level0Layout layout;
-
-	public BackroomsChunkGenerator(BiomeSource biomeSource, long seed) {
+	public BackroomsChunkGenerator(BiomeSource biomeSource) {
 		super(biomeSource);
-		this.seed = seed;
-		this.layout = new Level0Layout(seed);
 	}
 
 	@Override
@@ -56,9 +49,13 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 		return CODEC;
 	}
 
-	@Override
-	public ChunkGenerator withSeed(long seed) {
-		return new BackroomsChunkGenerator(this.biomeSource, seed);
+	/**
+	 * The world seed reaches generation through {@link RandomState} (in 1.21.1
+	 * chunk generators have no per-generator seed hook); the layout only holds
+	 * one long, so constructing it per call is essentially free.
+	 */
+	private static Level0Layout layout(RandomState random) {
+		return new Level0Layout(random.legacyLevelSeed());
 	}
 
 	@Override
@@ -107,6 +104,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 	@Override
 	public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState random,
 													StructureManager structures, ChunkAccess chunk) {
+		Level0Layout layout = layout(random);
 		Heightmap ocean = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
 		Heightmap surface = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
 
@@ -131,8 +129,8 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 				BlockState wallState = layout.isDampWall(x, z) ? wallDamp : wallNormal;
 
 				for (int y = 62; y <= 70; y++) {
-					BlockState state = columnState(y, wall, wallState, carpet, foundation, ceiling,
-							lightOn, lightOff, air, x, z);
+					BlockState state = columnState(layout, y, wall, wallState, carpet, foundation,
+							ceiling, lightOn, lightOff, air, x, z);
 					chunk.setBlockState(pos.set(lx, y, lz), state, false);
 					ocean.update(lx, y, lz, state);
 					surface.update(lx, y, lz, state);
@@ -140,9 +138,9 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
 				// flickering lights own a block entity
 				if (!wall && layout.fixtureAt(x, z) == Level0Layout.FIXTURE_FLICKER) {
-					BlockEntity be = new LightFlickerBlockEntity(
+					BlockEntity blockEntity = new LightFlickerBlockEntity(
 							new BlockPos(x, Level0Layout.CEILING_Y, z), lightOn);
-					chunk.setBlockEntity(be);
+					chunk.setBlockEntity(blockEntity);
 				}
 			}
 		}
@@ -150,9 +148,9 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 	}
 
 	@SuppressWarnings("checkstyle:ParameterNumber")
-	private BlockState columnState(int y, boolean wall, BlockState wallState, BlockState carpet,
-								BlockState foundation, BlockState ceiling, BlockState lightOn,
-								BlockState lightOff, BlockState air, int x, int z) {
+	private BlockState columnState(Level0Layout layout, int y, boolean wall, BlockState wallState,
+								BlockState carpet, BlockState foundation, BlockState ceiling,
+								BlockState lightOn, BlockState lightOff, BlockState air, int x, int z) {
 		if (y == 62 || y == 63 || y == 70) {
 			return foundation;
 		}
@@ -180,6 +178,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
 	@Override
 	public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor level, RandomState random) {
+		Level0Layout layout = layout(random);
 		int height = level.getHeight();
 		int minY = level.getMinBuildHeight();
 		BlockState[] states = new BlockState[height];

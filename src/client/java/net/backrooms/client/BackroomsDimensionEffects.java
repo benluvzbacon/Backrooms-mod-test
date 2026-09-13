@@ -9,7 +9,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public class BackroomsDimensionEffects extends DimensionSpecialEffects {
 	public BackroomsDimensionEffects() {
-		super(Float.NaN, false, SkyType.NONE, true, false);
+		super(Float.NaN, false, DimensionSpecialEffects.SkyType.NONE, true, false);
 	}
 
 	@Override

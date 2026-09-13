@@ -9,6 +9,7 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.client.model.geom.builders.TexturedModelData;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -72,6 +73,10 @@ public class BacteriaModel extends HierarchicalModel<BacteriaEntity> {
 		return LayerDefinition.create(mesh, 64, 64);
 	}
 
+	public static TexturedModelData createBodyData() {
+		return createBodyLayer().bakeRoot();
+	}
+
 	@Override
 	public void setupAnim(BacteriaEntity entity, float limbSwing, float limbSwingAmount,
 						float ageInTicks, float netHeadYaw, float headPitch) {
@@ -96,7 +101,7 @@ public class BacteriaModel extends HierarchicalModel<BacteriaEntity> {
 		this.head.xRot += 0.12F;
 
 		// Lunge with both arms when attacking.
-		float lunge = Mth.sin(this.attackTime * (float) Math.PI);
+		float lunge = Mth.sin(entity.attackTime * (float) Math.PI);
 		this.leftArm.xRot -= lunge * 1.6F;
 		this.rightArm.xRot -= lunge * 1.6F;
 	}

@@ -13,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -96,32 +96,21 @@ public final class SandHelmetHandler {
 	}
 
 	/** Sneak + right-click with sand in hand puts the sand on the player's head. */
-	public static InteractionResult onUseItem(Player player, Level level, InteractionHand hand) {
-		if (!player.isShiftKeyDown()) {
-			return InteractionResult.PASS;
-		}
+	public static InteractionResultHolder<ItemStack> onUseItem(Player player, Level level, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (!isPortalSand(stack)) {
-			return InteractionResult.PASS;
-		}
-		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-		if (isPortalSand(head)) {
-			return InteractionResult.PASS;
+		if (!player.isShiftKeyDown() || !isPortalSand(stack) || isPortalSand(player.getItemBySlot(EquipmentSlot.HEAD))) {
+			return InteractionResultHolder.pass(stack);
 		}
 		if (level.isClientSide()) {
-			return InteractionResult.SUCCESS;
+			return InteractionResultHolder.sidedSuccess(stack, false);
 		}
-		ItemStack toEquip;
-		if (player.getAbilities().instabuild) {
-			toEquip = stack.copyWithCount(1);
-		} else {
-			toEquip = stack.split(1);
-		}
+		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
+		ItemStack toEquip = player.getAbilities().instabuild ? stack.copyWithCount(1) : stack.split(1);
 		player.setItemSlot(EquipmentSlot.HEAD, toEquip);
 		if (!head.isEmpty()) {
 			player.getInventory().placeItemBackInInventory(head);
 		}
 		player.displayClientMessage(Component.translatable("message.backrooms.equipped"), true);
-		return InteractionResult.SUCCESS;
+		return InteractionResultHolder.sidedSuccess(stack, false);
 	}
 }

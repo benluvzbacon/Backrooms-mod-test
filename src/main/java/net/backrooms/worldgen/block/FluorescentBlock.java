@@ -42,14 +42,15 @@ public class FluorescentBlock extends Block implements EntityBlock {
 	}
 
 	@Override
+	@Override
 	@Nullable
+	@SuppressWarnings("unchecked")
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
 																BlockEntityType<T> type) {
-		if (level.isClientSide()) {
+		if (level.isClientSide() || type != ModBlockEntities.FLUORESCENT_LIGHT) {
 			return null;
 		}
-		return EntityBlock.createTickerHelper(type, ModBlockEntities.FLUORESCENT_LIGHT,
-				(levelAccess, pos, st, light) -> light.serverTick());
+		return (levelAccess, pos, st, blockEntity) -> ((LightFlickerBlockEntity) blockEntity).serverTick();
 	}
 
 	@Override
