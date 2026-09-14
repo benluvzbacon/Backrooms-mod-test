@@ -154,7 +154,59 @@ public final class SelfTest {
 			}
 		}
 		log("fixtures across probes: " + fixtures);
-		check("fixtures generated", fixtures >= 1);
+		// Explicit, broad fixture scan around spawn (the plan grid is sparse).
+		for (int cx = -3; cx <= 2; cx++) {
+			for (int cz = -3; cz <= 2; cz++) {
+				level.getChunk(cx, cz, ChunkStatus.FULL, true);
+			}
+		}
+		int lit = 0;
+		int dead = 0;
+		for (int x = -40; x < 40; x++) {
+			for (int z = -40; z < 40; z++) {
+				BlockState ceil2 = level.getBlockState(BlockPos.containing(x, Level0Layout.CEILING_Y, z));
+				if (ceil2.is(ModBlocks.FLUORESCENT)) {
+					if (ceil2.getValue(net.backrooms.worldgen.block.FluorescentBlock.LIT)) {
+						lit++;
+					} else {
+						dead++;
+					}
+				}
+			}
+		}
+		log("spawn-area fixtures lit=" + lit + " dark=" + dead);
+		check("lit fluorescent fixtures generate near spawn", lit > 0);
+
+		// Brightness check under one placed lit fixture.
+		BlockPos litPos = findFixture(level, true);
+		if (litPos != null) {
+			int light = level.getMaxLocalRawBrightness(litPos.below(2));
+			check("bright under a lit fixture, light=" + light, light >= 12);
+		} else {
+			check("found a lit fixture to measure light", false);
+		}
+
+		// Deterministic plan-level checks for flickering and dead fixtures
+		// somewhere nearby (exact, not probabilistic - the plan is seed fixed).
+		boolean planDead = false;
+		boolean planFlicker = false;
+		int planLit = 0;
+		for (int x = -240; x < 240 && !(planDead && planFlicker); x++) {
+			for (int z = -240; z < 240; z++) {
+				int f = layout.fixtureAt(x, z);
+				if (f == Level0Layout.FIXTURE_DEAD) {
+					planDead = true;
+				} else if (f == Level0Layout.FIXTURE_FLICKER) {
+					planFlicker = true;
+				} else if (f == Level0Layout.FIXTURE_LIT) {
+					planLit++;
+				}
+			}
+		}
+		log("plan fixtures in 480x480: lit=" + planLit + " dead=" + planDead + " flicker=" + planFlicker);
+		check("plan contains bright fixtures", planLit > 0);
+		check("plan contains permanently dead fixtures (dark sections)", planDead);
+		check("plan contains flickering fixtures", planFlicker);
 
 		// --- Bacteria entity lifecycle ---
 		BlockPos spawn = findOpen(level, 4, 4, 24);
@@ -198,6 +250,21 @@ public final class SelfTest {
 				if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir()
 						&& level.getBlockState(feet.below()).is(ModBlocks.CARPET)) {
 					return feet;
+				}
+			}
+		}
+		return null;
+	}
+
+	/** Finds an actually placed fluorescent fixture block (optionally lit) near spawn. */
+	private static BlockPos findFixture(ServerLevel level, boolean lit) {
+		for (int x = -48; x < 48; x++) {
+			for (int z = -48; z < 48; z++) {
+				BlockPos c = BlockPos.containing(x, Level0Layout.CEILING_Y, z);
+				BlockState s = level.getBlockState(c);
+				if (s.is(ModBlocks.FLUORESCENT)
+						&& s.getValue(net.backrooms.worldgen.block.FluorescentBlock.LIT) == lit) {
+					return c;
 				}
 			}
 		}
