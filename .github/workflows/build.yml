@@ -53,6 +53,28 @@ jobs:
               print(f"::error title=compile errors {i}::{c}")
           PY
 
+      - name: Verify remapped mod jar contents
+        run: |
+          set -e
+          JAR=$(ls build/libs/backrooms-*.jar | grep -v -- '-sources.jar' | head -1)
+          echo "Inspecting $JAR"
+          unzip -l "$JAR" > /tmp/jarlist.txt
+          for entry in \
+            "fabric.mod.json" \
+            "net/backrooms/Backrooms.class" \
+            "net/backrooms/worldgen/BackroomsChunkGenerator.class" \
+            "net/backrooms/entity/BacteriaEntity.class" \
+            "data/backrooms/dimension/backrooms.json" \
+            "data/backrooms/worldgen/biome/backrooms.json" \
+            "assets/backrooms/icon.png" \
+            "assets/backrooms/textures/entity/bacteria.png" \
+            "assets/backrooms/sounds/ambient/hum.ogg"; do
+            if ! grep -q "$entry" /tmp/jarlist.txt; then
+              echo "::error title=jar contents::missing $entry in $JAR"; exit 1
+            fi
+          done
+          CLASSES=$(grep -c '\.class' /tmp/jarlist.txt || true)
+          echo "::warning title=jar contents::$JAR contains $CLASSES class entries"
       - name: Upload mod jars
         if: always() && steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
@@ -77,9 +99,10 @@ jobs:
         timeout-minutes: 10
         run: |
           chmod +x ./gradlew
-          # Keep stdin open so the dedicated server console never sees EOF/shuts down.
-          bash -c 'sleep 900 | ./gradlew runServer -Pselftest --no-daemon --console=plain'
-          echo "runServer exited"
+          # Modern dedicated servers wait harmlessly on stdin EOF; the self-test
+          # calls System.exit with 0 (all checks passed) or 1 (failure).
+          ./gradlew runServer -Pselftest --no-daemon --console=plain < /dev/null
+          echo "runServer exited $?"
       - name: Publish self-test report
         if: always()
         shell: bash
