@@ -75,20 +75,36 @@ jobs:
       - name: Headless in-engine self-test
         id: selftest
         timeout-minutes: 10
-        run: chmod +x ./gradlew && ./gradlew runServer -Pselftest --no-daemon --console=plain
+        run: |
+          chmod +x ./gradlew
+          # Keep stdin open so the dedicated server console never sees EOF/shuts down.
+          bash -c 'sleep 900 | ./gradlew runServer -Pselftest --no-daemon --console=plain'
+          echo "runServer exited"
       - name: Publish self-test report
         if: always()
+        shell: bash
         run: |
+          set +e
           python3 - <<'PY'
           import os
-          p='/tmp/backrooms-selftest.txt'
-          body=open(p).read() if os.path.exists(p) else 'SELFTEST DID NOT COMPLETE'
-          lvl='error' if not body.startswith('SELFTEST OK') else 'warning'
-          chunks=[body[i:i+3500] for i in range(0,len(body),3500)]
-          for i,c in enumerate(chunks[:4]):
+          paths=['run/selftest-report.txt','/tmp/backrooms-selftest.txt']
+          body=None
+          for p in paths:
+              if os.path.exists(p):
+                  body=open(p,errors='replace').read(); break
+          if body is None:
+              log=''
+              if os.path.exists('run/logs/latest.log'):
+                  log=open('run/logs/latest.log',errors='replace').read()
+              body='SELFTEST DID NOT COMPLETE\n----- server log tail -----\n'+log[-6000:]
+          ok=body.startswith('SELFTEST OK')
+          open('/tmp/selftest-ok','w').write('1' if ok else '0')
+          chunks=[body[i:i+3300] for i in range(0,len(body),3300)]
+          for i,c in enumerate(chunks[:6]):
               c=c.replace('%','%25').replace('\r','').replace('\n','%0A')
-              print(f"::{lvl} title=selftest {i}::{c}")
+              print(f"::{'warning' if ok else 'error'} title=selftest {i}::{c}")
           PY
+          test "$(cat /tmp/selftest-ok)" = "1"
 
   signatures:
     needs: build

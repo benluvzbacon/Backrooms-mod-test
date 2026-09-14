@@ -31,11 +31,16 @@ import java.util.Set;
 public final class SelfTest {
 	private static final java.util.List<String> LINES = new java.util.ArrayList<>();
 	private static int failures;
+	public static volatile boolean DONE;
 
 	private SelfTest() {
 	}
 
-	public static void run(MinecraftServer server) {
+	public static synchronized void run(MinecraftServer server) {
+		if (DONE) {
+			return;
+		}
+		DONE = true;
 		try {
 			runThrowing(server);
 		} catch (Throwable t) {
@@ -220,8 +225,14 @@ public final class SelfTest {
 		for (String s : LINES) {
 			sb.append(s).append('\n');
 		}
+		String report = sb.toString();
 		try {
-			java.nio.file.Files.writeString(java.nio.file.Path.of("/tmp/backrooms-selftest.txt"), sb.toString());
+			java.nio.file.Files.writeString(java.nio.file.Path.of("/tmp/backrooms-selftest.txt"), report);
+		} catch (Exception ignored) {
+		}
+		try {
+			// Also write next to the server working dir so CI can pick it up reliably.
+			java.nio.file.Files.writeString(java.nio.file.Path.of("selftest-report.txt"), report);
 		} catch (Exception ignored) {
 		}
 		boolean ok = failures == 0;

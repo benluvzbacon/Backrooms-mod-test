@@ -23,7 +23,11 @@ public class Backrooms implements ModInitializer {
 		ModCreativeTabs.initialize();
 		ModWorldgen.initialize();
 
-		ServerLifecycleEvents.SERVER_STARTING.register(server -> BackroomsConfig.INSTANCE.load());
+		ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+			BackroomsConfig.INSTANCE.load();
+			LOGGER.info("[Backrooms] backrooms.selftest property = {}",
+					System.getProperty("backrooms.selftest"));
+		});
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			if (Boolean.getBoolean("backrooms.selftest")) {
 				net.backrooms.selftest.SelfTest.run(server);
@@ -33,6 +37,11 @@ public class Backrooms implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			SandHelmetHandler.tick(server);
 			BacteriaSpawner.tick(server);
+			// Fallback trigger for the headless self-test if SERVER_STARTED raced startup.
+			if (Boolean.getBoolean("backrooms.selftest")
+					&& !net.backrooms.selftest.SelfTest.DONE && server.getTickCount() > 40) {
+				net.backrooms.selftest.SelfTest.run(server);
+			}
 		});
 
 		UseItemCallback.EVENT.register(SandHelmetHandler::onUseItem);
