@@ -80,7 +80,7 @@ public final class SandHelmetHandler {
 	 * Finds a safe arrival point near the global spawn (centre of an
 	 * intersection). Deterministic per player so arrivals spread out slightly.
 	 */
-	private static BlockPos findSpawn(ServerLevel level) {
+	public static BlockPos findSpawn(ServerLevel level) {
 		int[][] offsets = {{0, 0}, {4, 0}, {-4, 0}, {0, 4}, {0, -4}, {8, 0}, {-8, 0}, {0, 8}, {0, -8}};
 		for (int[] o : offsets) {
 			BlockPos carpet = BlockPos.containing(o[0], net.backrooms.worldgen.Level0Layout.FLOOR_Y, o[1]);
