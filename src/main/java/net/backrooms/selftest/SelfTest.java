@@ -241,6 +241,7 @@ public final class SelfTest {
 		// Route A: right-click in the air with sand (no sneak required).
 		var airFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
 				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-air"));
+		airFake.getAbilities().instabuild = false;
 		airFake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.SAND, 3));
 		var airResult = net.backrooms.mechanics.SandHelmetHandler.onUseItem(
 				airFake, server.overworld(), net.minecraft.world.InteractionHand.MAIN_HAND);
@@ -255,6 +256,7 @@ public final class SelfTest {
 		// Route B: sneak + right-click on a block equips; without sneak it passes (normal placement).
 		var blockFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
 				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-block"));
+		blockFake.getAbilities().instabuild = false;
 		blockFake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.SAND, 3));
 		var sneakResult = net.backrooms.mechanics.SandHelmetHandler.useBlock(
 				blockFake, server.overworld(), net.minecraft.world.InteractionHand.MAIN_HAND, true);
@@ -265,6 +267,7 @@ public final class SelfTest {
 						blockFake.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD)));
 		var normalFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
 				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-normal"));
+		normalFake.getAbilities().instabuild = false;
 		normalFake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.SAND, 3));
 		var normalResult = net.backrooms.mechanics.SandHelmetHandler.useBlock(
 				normalFake, server.overworld(), net.minecraft.world.InteractionHand.MAIN_HAND, false);
