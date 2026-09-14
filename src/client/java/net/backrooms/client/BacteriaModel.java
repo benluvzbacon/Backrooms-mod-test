@@ -4,7 +4,6 @@ import net.backrooms.entity.BacteriaEntity;
 import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.TexturedModelData;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
@@ -71,10 +70,6 @@ public class BacteriaModel extends HierarchicalModel<BacteriaEntity> {
 						.addBox(-1.0F, 0.0F, -1.0F, 2.0F, 14.0F, 2.0F, new CubeDeformation(0.0F)),
 				PartPose.offset(1.5F, 18.0F, 0.0F));
 		return LayerDefinition.create(mesh, 64, 64);
-	}
-
-	public static TexturedModelData createBodyData() {
-		return TexturedModelData.of(createBodyLayer());
 	}
 
 	@Override
