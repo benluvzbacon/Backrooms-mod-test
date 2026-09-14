@@ -28,11 +28,8 @@ public class Backrooms implements ModInitializer {
 			LOGGER.info("[Backrooms] backrooms.selftest property = {}",
 					System.getProperty("backrooms.selftest"));
 		});
-		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-			if (Boolean.getBoolean("backrooms.selftest")) {
-				net.backrooms.selftest.SelfTest.run(server);
-			}
-		});
+		// The headless self-test runs from the server tick loop (see below);
+		// SERVER_STARTED fires before the loop, where blocking chunk loads deadlock.
 
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			SandHelmetHandler.tick(server);
