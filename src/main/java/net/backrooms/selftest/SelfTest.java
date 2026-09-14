@@ -225,8 +225,9 @@ public final class SelfTest {
 		}
 
 		// --- sand helmet entry mechanics ---
-		// A connected player can't be simulated headlessly; verify the trigger
-		// item detection and the arrival-point search instead.
+		// A connected player's cross-dimension teleport can't be driven
+		// headlessly (FakePlayer is untracked), so exercise the equip routes
+		// directly and verify the arrival-point search instead.
 		check("sand is the portal trigger item",
 				net.backrooms.mechanics.SandHelmetHandler.isPortalSand(new ItemStack(Items.SAND)));
 		check("red sand is not the portal trigger",
@@ -237,9 +238,44 @@ public final class SelfTest {
 				&& level.getBlockState(arrival.above()).isAir()
 				&& level.getBlockState(arrival.above(2)).isAir());
 
-		// Sand in the helmet slot while already in the Backrooms must not re-trigger.
-		check("tick handler tolerates a world with no players", true);
+		// Route A: right-click in the air with sand (no sneak required).
+		var airFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
+				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-air"));
+		airFake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.SAND, 3));
+		var airResult = net.backrooms.mechanics.SandHelmetHandler.onUseItem(
+				airFake, server.overworld(), net.minecraft.world.InteractionHand.MAIN_HAND);
+		check("air-click with sand succeeds",
+				airResult.getResult() == net.minecraft.world.InteractionResult.SUCCESS);
+		check("air-click puts sand on the head",
+				net.backrooms.mechanics.SandHelmetHandler.isPortalSand(
+						airFake.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD)));
+		check("air-click consumes one sand",
+				airFake.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND).getCount() == 2);
+
+		// Route B: sneak + right-click on a block equips; without sneak it passes (normal placement).
+		var blockFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
+				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-block"));
+		blockFake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.SAND, 3));
+		var sneakResult = net.backrooms.mechanics.SandHelmetHandler.useBlock(
+				blockFake, server.overworld(), net.minecraft.world.InteractionHand.MAIN_HAND, true);
+		check("sneak+block-click with sand succeeds (no placement)",
+				sneakResult == net.minecraft.world.InteractionResult.SUCCESS);
+		check("sneak+block-click puts sand on the head",
+				net.backrooms.mechanics.SandHelmetHandler.isPortalSand(
+						blockFake.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD)));
+		var normalFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
+				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-normal"));
+		normalFake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.SAND, 3));
+		var normalResult = net.backrooms.mechanics.SandHelmetHandler.useBlock(
+				normalFake, server.overworld(), net.minecraft.world.InteractionHand.MAIN_HAND, false);
+		check("non-sneak block-click still allows placing sand (pass)",
+				normalResult == net.minecraft.world.InteractionResult.PASS
+						&& normalFake.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).isEmpty()
+						&& normalFake.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND).getCount() == 3);
+
+		// The tick watcher must not trip on players in other worlds without sand.
 		net.backrooms.mechanics.SandHelmetHandler.tick(server);
+		check("tick handler runs cleanly", true);
 	}
 
 

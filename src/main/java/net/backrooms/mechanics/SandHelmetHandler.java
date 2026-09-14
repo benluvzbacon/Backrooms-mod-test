@@ -1,8 +1,8 @@
 package net.backrooms.mechanics;
 
 import net.backrooms.ModWorldgen;
-import net.minecraft.core.BlockPos;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
@@ -13,20 +13,31 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * The entry mechanic. Once ordinary sand sits in the player's helmet slot the
  * player is moved into the Backrooms - exactly once, because the guard is the
  * dimension itself, not a ticking flag.
  *
- * <p>Sand cannot normally be equipped in survival, so sneaking + right
- * clicking with sand in hand also places one block on the head.</p>
+ * <p>Vanilla inventories refuse to place a sand block in the helmet slot and
+ * right-clicking sand normally places the block, so three reliable routes are
+ * supported:</p>
+ * <ul>
+ *   <li>sand placed in the helmet slot by any means (creative menu, /item) -
+ *       the tick watcher teleports immediately;</li>
+ *   <li><b>right-click while looking at the sky / air</b> with sand in hand
+ *       (vanilla air-use of sand does nothing, so this is free to hijack);</li>
+ *   <li><b>sneak + right-click while looking at a block</b> (intercepted before
+ *       the sand can be placed).</li>
+ * </ul>
  */
 public final class SandHelmetHandler {
 	private SandHelmetHandler() {
@@ -110,22 +121,64 @@ public final class SandHelmetHandler {
 		return BlockPos.containing(0, net.backrooms.worldgen.Level0Layout.FLOOR_Y, 0);
 	}
 
-	/** Sneak + right-click with sand in hand puts the sand on the player's head. */
+	// ----------------------------------------------------------- equip routes
+
+	/**
+	 * Right-click in the air with sand: equips it. Sneaking is not required
+	 * because vanilla air-use of a sand block does nothing.
+	 */
 	public static InteractionResultHolder<ItemStack> onUseItem(Player player, Level level, InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (!player.isShiftKeyDown() || !isPortalSand(stack) || isPortalSand(player.getItemBySlot(EquipmentSlot.HEAD))) {
+		if (!isPortalSand(stack) || isPortalSand(player.getItemBySlot(EquipmentSlot.HEAD))) {
 			return InteractionResultHolder.pass(stack);
 		}
 		if (level.isClientSide()) {
-			return InteractionResultHolder.sidedSuccess(stack, false);
+			return InteractionResultHolder.success(stack);
 		}
-		ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
+		return equipToHead(player, hand)
+				? InteractionResultHolder.success(stack)
+				: InteractionResultHolder.pass(stack);
+	}
+
+	/**
+	 * Sneak + right-click on a block with sand: equips it instead of placing
+	 * the block. Non-sneaking placement is left completely untouched.
+	 */
+	public static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hit) {
+		return useBlock(player, level, hand, player.isShiftKeyDown());
+	}
+
+	/** Test/override hook with an explicit sneak flag (the headless test has no input). */
+	public static InteractionResult useBlock(Player player, Level level, InteractionHand hand, boolean sneaking) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (!sneaking || !isPortalSand(stack) || isPortalSand(player.getItemBySlot(EquipmentSlot.HEAD))) {
+			return InteractionResult.PASS;
+		}
+		if (level.isClientSide()) {
+			// Cancel block placement on the client; it still informs the server.
+			return InteractionResult.SUCCESS;
+		}
+		return equipToHead(player, hand) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+	}
+
+	/** Moves one sand block from the given hand onto the player's head. */
+	public static boolean equipToHead(Player player, InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (!isPortalSand(stack) || isPortalSand(player.getItemBySlot(EquipmentSlot.HEAD))) {
+			return false;
+		}
+		ItemStack previousHelmet = player.getItemBySlot(EquipmentSlot.HEAD);
 		ItemStack toEquip = player.getAbilities().instabuild ? stack.copyWithCount(1) : stack.split(1);
+		if (toEquip.isEmpty()) {
+			return false;
+		}
 		player.setItemSlot(EquipmentSlot.HEAD, toEquip);
-		if (!head.isEmpty()) {
-			player.getInventory().placeItemBackInInventory(head);
+		if (!previousHelmet.isEmpty()) {
+			player.getInventory().placeItemBackInInventory(previousHelmet);
 		}
 		player.displayClientMessage(Component.translatable("message.backrooms.equipped"), true);
-		return InteractionResultHolder.sidedSuccess(stack, false);
+		player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.7F, 0.85F);
+		return true;
 	}
 }

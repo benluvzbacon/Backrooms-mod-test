@@ -5,6 +5,7 @@ import net.backrooms.mechanics.SandHelmetHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ public class Backrooms implements ModInitializer {
 		});
 
 		UseItemCallback.EVENT.register(SandHelmetHandler::onUseItem);
+		UseBlockCallback.EVENT.register(SandHelmetHandler::onUseBlock);
 
 		LOGGER.info("[Backrooms] initialised - put sand on your head to no-clip in");
 	}

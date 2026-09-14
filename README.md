@@ -16,14 +16,28 @@ loader.
 1. Install **Fabric Loader 0.16+ for 1.21.1** and **Fabric API**
    (`0.116.x+1.21.1` or newer).
 2. Drop the mod `.jar` into your `mods/` folder (Java 21 is required by 1.21.1).
-3. Get some **sand** and put it on your head:
-   - **Creative:** drag a sand block straight into your helmet slot.
-   - **Survival:** hold sand in your hand, **sneak + right-click** — one block
-     is placed on your head (your old helmet is returned to your inventory).
-4. The moment sand occupies the helmet slot you are pulled into
-   `backrooms:backrooms`. The trigger checks your dimension, so it fires
-   exactly once and never spams teleports.
+3. Get some **sand** and put it on your head — any of these works:
+   - **Look at the sky/open air and right-click** while holding sand (the
+     easiest: vanilla air-use of sand does nothing, so the mod uses it to
+     place one block on your head).
+   - **Sneak + right-click while looking at a block** while holding sand (this
+     equips instead of placing the block; without sneaking, sand places
+     normally).
+   - **Creative / commands:** put sand directly into the helmet slot, or run
+     `/item replace entity @s armor.head from minecraft:sand`.
+
+   Your previous helmet is returned to your inventory. In survival one sand
+   block is consumed; in creative it isn't.
+4. The moment sand occupies the helmet slot (normally the very next tick) you
+   are pulled into `backrooms:backrooms`. The trigger checks your dimension, so
+   it fires exactly once and never spams teleports. If you somehow end up with
+   sand on your head in the Overworld again (e.g. `/item`), it teleports you
+   once more.
 5. Wander. Watch the lights. Listen for the growl.
+
+> **Tip:** dragging sand into the helmet slot with the mouse does **not** work
+> in a survival inventory screen — vanilla refuses non-armor items there. Use
+> one of the click routes above.
 
 There is no escape mechanic in v1 — dying uses normal Minecraft respawn
 rules (you wake up back in the Overworld at your spawn point).
@@ -64,8 +78,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.0.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.0-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.1.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.1-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -84,7 +98,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.0.jar`** in `mods/`.
+3. Put **`backrooms-1.0.1.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -203,7 +217,7 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.0.jar`.
+  download `backrooms-1.0.1.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
