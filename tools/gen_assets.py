@@ -91,6 +91,7 @@ w("data/backrooms/dimension_type/backrooms.json", {
     "bed_works": False,
     "has_raids": False,
     "has_skylight": False,
+    "has_ceiling": True,
     "coordinate_scale": 1.0,
     "ambient_light": 0.12,
     "fixed_time": 18000,
