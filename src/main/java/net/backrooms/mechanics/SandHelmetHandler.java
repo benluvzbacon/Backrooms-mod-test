@@ -56,6 +56,21 @@ public final class SandHelmetHandler {
 	public static void enter(ServerPlayer player, ServerLevel target) {
 		BlockPos spawn = findSpawn(target);
 		target.getChunk(spawn.getX() >> 4, spawn.getZ() >> 4);
+
+		// Consume one sand block on the way in (creative keeps it). This also
+		// prevents a death/respawn loop: without sand on their head, players
+		// who die stay in the Overworld after respawning. Done before the
+		// dimension transfer so the inventory is copied across.
+		if (!player.getAbilities().instabuild) {
+			ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
+			if (isPortalSand(head)) {
+				head.shrink(1);
+				if (head.isEmpty()) {
+					player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+				}
+			}
+		}
+
 		player.teleportTo(
 				target,
 				spawn.getX() + 0.5,
