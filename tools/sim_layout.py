@@ -6,18 +6,20 @@ the procedural floor plan without launching Minecraft:
   - full connectivity flood fill (no sealed pockets)
   - corridor bands stay open
   - no obvious repeating 16x16 chunk pattern
-  - wall-density sanity (avoid huge empty areas)
+  - wall-density sanity (maze-like but with open rooms)
 
 Java 64-bit signed-overflow semantics are reproduced exactly.
-Usage: python3 tools/sim_layout.py [seed] [radius]
+Usage: python3 tools/sim_layout.py [seed] [radius] [--preview]
 """
 import collections
 import statistics
 import sys
 
 MASK = (1 << 64) - 1
-SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
-R = int(sys.argv[2]) if len(sys.argv) > 2 else 300
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+SEED = int(ARGS[0]) if len(ARGS) > 0 else 42
+R = int(ARGS[1]) if len(ARGS) > 1 else 300
+PREVIEW = "--preview" in sys.argv
 
 
 def s64(x):
@@ -41,18 +43,30 @@ def mix(z):
     return s64(u64(z) ^ (u64(z) >> 31))
 
 
-def h(a, b, c):
+def h3(a, b, c):
     return mix(s64(SEED ^ mix(s64(a * 31 + b * 37 + c * 131 + 0x243F6A8885A308D3))))
 
 
-def r01(a, b, c):
-    return (u64(h(a, b, c)) >> 11) * (2.0 ** -53)
+def h4(a, b, c, d):
+    return mix(h3(a, b, c) ^ mix(s64(d * 0x9E3779B1 + 17)))
+
+
+def r3(a, b, c):
+    return (u64(h3(a, b, c)) >> 11) * (2.0 ** -53)
+
+
+def r4(a, b, c, d):
+    return (u64(h4(a, b, c, d)) >> 11) * (2.0 ** -53)
 
 
 SPACING = 24
 HALL = 3
 BAND = 1
 JITTER = 5
+OPEN_CELL_CHANCE = 0.20
+MAZE_LOOP_CHANCE = 0.12
+
+SEG_MISSING, SEG_DOOR, SEG_SOLID = 0, 1, 2
 
 
 def fdiv(a, n):
@@ -62,7 +76,7 @@ def fdiv(a, n):
 def line(pos_axis, i):
     if i % HALL == 0:
         return i * SPACING
-    return i * SPACING + int(r01(pos_axis, i, 0) * (JITTER * 2 + 1)) - JITTER
+    return i * SPACING + int(r3(pos_axis, i, 0) * (JITTER * 2 + 1)) - JITTER
 
 
 def line_x(i):
@@ -101,12 +115,11 @@ def in_band(coord, xaxis):
     return abs(coord - pos) <= BAND and idx % HALL == 0
 
 
-SEG_MISSING, SEG_DOOR, SEG_SOLID = 0, 1, 2
-
-
 def raw(axis, wall, cell):
-    r = r01(axis, wall, cell)
-    return SEG_MISSING if r < 0.30 else SEG_DOOR if r < 0.78 else SEG_SOLID
+    r = r3(axis, wall, cell)
+    if r < 0.13:
+        return SEG_MISSING
+    return SEG_DOOR if r < 0.57 else SEG_SOLID
 
 
 def enclosed(cx, cz):
@@ -118,7 +131,7 @@ def enclosed(cx, cz):
 
 
 def escape(cx, cz):
-    return int(r01(9, cx, cz) * 4)
+    return int(r3(9, cx, cz) * 4)
 
 
 def xseg(w, k):
@@ -151,7 +164,7 @@ def xwallblocks(i, z):
         return False
     if st == SEG_SOLID:
         return True
-    mid = (z0 + z1) // 2 + int(r01(11, i, k) * 5) - 2
+    mid = (z0 + z1) // 2 + int(r3(11, i, k) * 5) - 2
     return z not in (mid - 1, mid)
 
 
@@ -165,8 +178,124 @@ def zwallblocks(i, x):
         return False
     if st == SEG_SOLID:
         return True
-    mid = (x0 + x1) // 2 + int(r01(12, i, k) * 5) - 2
+    mid = (x0 + x1) // 2 + int(r3(12, i, k) * 5) - 2
     return x not in (mid - 1, mid)
+
+
+# ------------------------------------------------------------- maze cells
+def jround(f):
+    # java Math.round: floor(x + 0.5)
+    import math
+    return int(math.floor(f + 0.5))
+
+
+def maze_grid(span_x, span_z):
+    gx = min(3, max(2, jround(span_x / 8.0)))
+    gz = min(3, max(2, jround(span_z / 8.0)))
+    return gx, gz
+
+
+def cell_open(i, k):
+    return r3(40, i, k) < OPEN_CELL_CHANCE
+
+
+def maze_edges(i, k, gx, gz):
+    """Spanning-tree DFS maze + a few loop openings. Returns dict (node,dir)->open."""
+    edges = {}
+    visited = [False] * (gx * gz)
+    stack = [0]
+    visited[0] = True
+    rng = h3(51, i, k) | 1
+    while stack:
+        node = stack[-1]
+        c, r = node % gx, node // gx
+        cands = [node - gx, node + gx, node - 1, node + 1]
+        dirs = [0, 1, 2, 3]
+        for q in range(4):
+            rng = (rng * 0x5851F42D4C957F2D + 0x14057B7EF767814F) & MASK
+            s = rng & MASK
+            pick = q + ((s >> 33) % (4 - q))
+            cands[q], cands[pick] = cands[pick], cands[q]
+            dirs[q], dirs[pick] = dirs[pick], dirs[q]
+        valid_neighbours = []
+        for q in range(4):
+            nn, d = cands[q], dirs[q]
+            if nn < 0 or nn >= gx * gz:
+                continue
+            nc, nr = nn % gx, nn // gx
+            if d == 2 and c == 0:
+                continue
+            if d == 3 and c == gx - 1:
+                continue
+            if not visited[nn]:
+                valid_neighbours.append(q)
+        if not valid_neighbours:
+            stack.pop()
+            continue
+        rng = (rng * 0x5851F42D4C957F2D + 0x14057B7EF767814F) & MASK
+        q = valid_neighbours[(rng >> 33) % len(valid_neighbours)]
+        nn, d = cands[q], dirs[q]
+        visited[nn] = True
+        edges[(node, d)] = True
+        edges[(nn, d ^ 1)] = True
+        stack.append(nn)
+    for r in range(gz):
+        for c in range(gx):
+            node = r * gx + c
+            if c + 1 < gx and (node, 3) not in edges and r4(52, i, k, node) < MAZE_LOOP_CHANCE:
+                edges[(node, 3)] = True
+                edges[(node + 1, 2)] = True
+            if r + 1 < gz and (node, 1) not in edges and r4(53, i, k, node) < MAZE_LOOP_CHANCE:
+                edges[(node, 1)] = True
+                edges[(node + gx, 0)] = True
+    return edges
+
+
+def interior_partition(i, k, x, z):
+    x0, x1 = line_x(i), line_x(i + 1)
+    z0, z1 = line_z(k), line_z(k + 1)
+    span_x, span_z = x1 - x0, z1 - z0
+    if cell_open(i, k):
+        return False
+    gx, gz = maze_grid(span_x, span_z)
+    edges = maze_edges(i, k, gx, gz)
+    vx = [x0 + jround(s * span_x / gx) for s in range(1, gx)]
+    hz = [z0 + jround(s * span_z / gz) for s in range(1, gz)]
+    px = vx.index(x) + 1 if x in vx else -1
+    pz = hz.index(z) + 1 if z in hz else -1
+    if px >= 0 and pz >= 0:
+        return True
+    if px >= 0:
+        c = px - 1
+        if z <= z0 + 1 or z >= z1 - 1:
+            return False
+        if z in hz:
+            return True
+        r = next((s for s in range(len(hz)) if z < hz[s]), gz - 1)
+        if edges.get((r * gx + c, 3)):
+            lo = z0 + 2 if r == 0 else hz[r - 1]
+            hi = z1 - 2 if r == gz - 1 else hz[r]
+            width = 3 if r4(60, i, k, r * 8 + c) < 0.22 else 2
+            span = max(1, hi - lo - width - 1)
+            mid = lo + 1 + int(r4(61, i, k, r * 8 + c) * span)
+            return not any(z == mid + g for g in range(width))
+        return True
+    if pz >= 0:
+        r = pz - 1
+        if x <= x0 + 1 or x >= x1 - 1:
+            return False
+        if x in vx:
+            return True
+        c = next((s for s in range(len(vx)) if x < vx[s]), gx - 1)
+        if edges.get((r * gx + c, 1)):
+            lo = x0 + 2 if c == 0 else vx[c - 1]
+            hi = x1 - 2 if c == gx - 1 else vx[c]
+            width = 3 if r4(62, i, k, r * 8 + c) < 0.22 else 2
+            span = max(1, hi - lo - width - 1)
+            mid = lo + 1 + int(r4(63, i, k, r * 8 + c) * span)
+            return not any(x == mid + g for g in range(width))
+        return True
+    return False
 
 
 def is_wall(x, z):
@@ -178,6 +307,10 @@ def is_wall(x, z):
         return True
     if ki is not None and ki % HALL != 0 and zwallblocks(ki, x):
         return True
+    if xi is None and ki is None:
+        i = cell_index(x, False)
+        k = cell_index(z, True)
+        return interior_partition(i, k, x, z)
     return False
 
 
@@ -186,7 +319,10 @@ def main():
     walls = 0
     for x in range(-R, R + 1):
         for z in range(-R, R + 1):
-            (walls := walls + 1) if is_wall(x, z) else walk.add((x, z))
+            if is_wall(x, z):
+                walls += 1
+            else:
+                walk.add((x, z))
     seen = {(0, 0)}
     dq = collections.deque([(0, 0)])
     while dq:
@@ -203,15 +339,14 @@ def main():
     print(f"unreached interior columns: {interior_unreached}")
 
     blocked_center = blocked_band = 0
-    for i in range(-5, 6):
+    for i in range(-6, 7):
         cx = i * HALL * SPACING
         for z in range(-R, R + 1):
             blocked_center += 1 if is_wall(cx, z) else 0
             blocked_band += 1 if is_wall(cx - 1, z) or is_wall(cx + 1, z) else 0
-        cz = cx
         for x in range(-R, R + 1):
-            blocked_center += 1 if is_wall(x, cz) else 0
-            blocked_band += 1 if is_wall(x, cz - 1) or is_wall(x, cz + 1) else 0
+            blocked_center += 1 if is_wall(x, cx) else 0
+            blocked_band += 1 if is_wall(x, cx - 1) or is_wall(x, cx + 1) else 0
     print(f"blocked corridor centers: {blocked_center}, blocked band edges: {blocked_band}")
 
     chunks = {}
@@ -230,6 +365,27 @@ def main():
 
     ok = interior_unreached == 0 and blocked_center == 0 and blocked_band == 0
     print("RESULT:", "OK" if ok else "FAIL")
+
+    if PREVIEW:
+        from PIL import Image
+        scale = 3
+        img = Image.new("RGB", ((2 * R + 1) * scale, (2 * R + 1) * scale), (196, 178, 84))
+        px = img.load()
+        for x in range(-R, R + 1):
+            for z in range(-R, R + 1):
+                if is_wall(x, z):
+                    col = (116, 100, 34)
+                elif in_band(x, True) or in_band(z, False):
+                    col = (214, 200, 120)
+                else:
+                    continue
+                for a in range(scale):
+                    for b in range(scale):
+                        px[(x + R) * scale + a, (z + R) * scale + b] = col
+        out = "tools/layout_preview.png"
+        img.save(out)
+        print("wrote", out)
+
     sys.exit(0 if ok else 1)
 
 

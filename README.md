@@ -78,8 +78,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.1.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.1-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.2.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.2-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -98,7 +98,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.1.jar`** in `mods/`.
+3. Put **`backrooms-1.0.2.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -133,6 +133,14 @@ The level is the intersection of two families of wall lines on a
   **door-punched** (2-wide gap), or **missing entirely** (merging adjacent
   rooms into larger ones). Rare larger rooms emerge from consecutive missing
   segments and from occasional permanently dark fixture patches.
+- The strips between the corridor bands are split into **cells**. About 20 %
+  of cells are left as wide-open rooms (sometimes merging through a missing
+  perimeter wall). The rest are **maze rooms**: a 2-3 x 2-3 grid of sub-rooms
+  partitioned by walls whose openings are laid out with a deterministic
+  depth-first spanning-tree search (every sub-room reachable, genuine winding
+  passages), plus a few extra loop openings so it doesn't degenerate into a
+  pure tree maze. Cell maze data is cached per chunk, so the extra walls cost
+  essentially no generation time.
 - Doors are decided by hashing the world seed together with the segment
   coordinates, so the layout is a **pure function of `(seed, x, z)`**. Because
   chunk generation asks that same function for its 16×16 columns, walls and
@@ -217,7 +225,7 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.1.jar`.
+  download `backrooms-1.0.2.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).

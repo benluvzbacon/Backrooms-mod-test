@@ -79,7 +79,8 @@ def hum():
     sig[:xf] += sig[-xf:] * (1 - fade)
     sig = sig[:-xf] if False else sig
     sig /= max(1e-9, np.max(np.abs(sig)))
-    sig *= 0.5
+    # Kept deliberately quiet: this loops continuously as biome ambience.
+    sig *= 0.22
     write_ogg("ambient/hum", sig)
 
 
