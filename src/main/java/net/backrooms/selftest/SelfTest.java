@@ -338,9 +338,28 @@ public final class SelfTest {
 				level.getChunk(cx, cz, ChunkStatus.FULL, true);
 			}
 		}
+		Level0Layout planLayout = new Level0Layout(level.getSeed());
+		int planPads = 0;
+		for (int cx = -8; cx < 12; cx++) {
+			for (int cz = -8; cz < 12; cz++) {
+				if (planLayout.poolPadCenter(cx, cz) != Level0Layout.NO_POS) {
+					planPads++;
+				}
+			}
+		}
+		int planRingColumns = 0;
+		for (int x = -8 * 16; x < 12 * 16; x++) {
+			for (int z = -8 * 16; z < 12 * 16; z++) {
+				if (planLayout.poolPadRoleAt(x, z) != 0) {
+					planRingColumns++;
+				}
+			}
+		}
+		log("level0 plan pads=" + planPads + " padColumns=" + planRingColumns);
 		int chests = 0;
 		boolean chestWithAlmondWater = false;
 		int portalBlocks = 0;
+		int ringBlocks = 0;
 		boolean ringOk = false;
 		var chestVisitor = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
 				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-chest"));
@@ -372,9 +391,13 @@ public final class SelfTest {
 						ringOk = true;
 					}
 				}
+				if (level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y, z))
+						.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)) {
+					ringBlocks++;
+				}
 			}
 		}
-		log("level0 generated chests=" + chests + " portalBlocks=" + portalBlocks);
+		log("level0 generated chests=" + chests + " portalBlocks=" + portalBlocks + " ringBlocks=" + ringBlocks);
 		check("supply chests generate in Level 0", chests > 0);
 		check("a supply chest contained almond water", chestWithAlmondWater);
 		check("pool portal pads generate in Level 0", portalBlocks > 0);
