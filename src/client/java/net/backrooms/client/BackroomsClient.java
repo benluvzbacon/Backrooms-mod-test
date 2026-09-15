@@ -10,8 +10,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 public class BackroomsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		EntityModelLayerRegistry.registerModelLayer(BacteriaModel.LAYER, BacteriaModel::createBodyLayer);
-		EntityRendererRegistry.register(ModEntities.BACTERIA, BacteriaRenderer::new);
+		EntityModelLayerRegistry.registerModelLayer(StillLifeModel.LAYER, StillLifeModel::createBodyLayer);
+		EntityRendererRegistry.register(ModEntities.STILL_LIFE, StillLifeRenderer::new);
 
 		DimensionRenderingRegistry.registerDimensionEffects(
 				ModWorldgen.BACKROOMS_ID, new BackroomsDimensionEffects());

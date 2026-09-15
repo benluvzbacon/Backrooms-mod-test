@@ -18,7 +18,7 @@
   "spawners": {
     "monster": [
       {
-        "type": "backrooms:bacteria",
+        "type": "backrooms:still_life",
         "weight": 6,
         "minSize": 1,
         "maxSize": 1

@@ -84,7 +84,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 	@Override
 	public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structures) {
 		// Rare supply chests holding Almond Water; everything else is handled in
-		// fillFromNoise (lights, rooms) or by the BacteriaSpawner.
+		// fillFromNoise (lights, rooms) or by the StillLifeSpawner.
 		Level0Layout layout = layout();
 		long packed = layout.supplyChestPos(chunk.getPos().x, chunk.getPos().z);
 		if (packed != Level0Layout.NO_POS) {
@@ -97,7 +97,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
 	@Override
 	public void spawnOriginalMobs(WorldGenRegion region) {
-		// Handled by the custom BacteriaSpawner.
+		// Handled by the custom StillLifeSpawner.
 	}
 
 	@Override

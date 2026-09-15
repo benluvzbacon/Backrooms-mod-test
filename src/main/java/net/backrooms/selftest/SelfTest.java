@@ -4,7 +4,7 @@ import net.backrooms.ModBlocks;
 import net.backrooms.ModEntities;
 import net.backrooms.ModSounds;
 import net.backrooms.ModWorldgen;
-import net.backrooms.entity.BacteriaEntity;
+import net.backrooms.entity.StillLifeEntity;
 import net.backrooms.worldgen.Level0Layout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -24,7 +24,7 @@ import java.util.Set;
  * Headless in-engine smoke test, activated with {@code -Dbackrooms.selftest=true}
  * (the CI "selftest" Gradle task). Loads the Backrooms dimension on a dedicated
  * server, generates chunks thousands of blocks out, verifies the floor plan,
- * lights, full connectivity, Bacteria spawning and the sand helmet teleport,
+ * lights, full connectivity, Still Life spawning and the sand helmet teleport,
  * then stops the process (exit code 1 on any failure).
  */
 public final class SelfTest {
@@ -213,19 +213,20 @@ public final class SelfTest {
 		check("plan contains permanently dead fixtures (dark sections)", planDead);
 		check("plan contains flickering fixtures", planFlicker);
 
-		// --- Bacteria entity lifecycle ---
+		// --- Still Life entity lifecycle ---
 		BlockPos spawn = findOpen(level, 4, 4, 24);
-		check("found open Bacteria spawn position", spawn != null);
+		check("found open Still Life spawn position", spawn != null);
 		if (spawn != null) {
-			BacteriaEntity bacteria = ModEntities.BACTERIA.create(level);
-			check("Bacteria entity created", bacteria != null);
-			if (bacteria != null) {
-				bacteria.moveTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, 0, 0);
-				check("Bacteria added to level", level.addFreshEntity(bacteria));
-				check("Bacteria alive", bacteria.isAlive());
-				check("Bacteria attack attribute",
-						bacteria.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) != null);
-				check("Bacteria ambient sound wired", ModSounds.BACTERIA_AMBIENT != null);
+			StillLifeEntity still = ModEntities.STILL_LIFE.create(level);
+			check("Still Life entity created", still != null);
+			if (still != null) {
+				still.moveTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, 0, 0);
+				check("Still Life added to level", level.addFreshEntity(still));
+				check("Still Life alive", still.isAlive());
+				check("Still Life attack attribute",
+						still.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) != null);
+				check("Still Life ambient sound wired", ModSounds.STILL_LIFE_AMBIENT != null);
+				check("Still Life starts unfrozen before observation", !still.isFrozenPose());
 			}
 		}
 
@@ -573,6 +574,138 @@ public final class SelfTest {
 		net.backrooms.mechanics.PoolPortalHandler.tick(server);
 		net.backrooms.sanity.SanityHandler.tick(server);
 		check("v1.0.3 tick handlers run cleanly", true);
+
+		runV105Checks(server, pl, pool);
+	}
+
+	// ------------------------------------------------------------ v1.0.5
+	private static void runV105Checks(MinecraftServer server,
+			net.backrooms.worldgen.PoolroomsLayout pl, ServerLevel pool) {
+		check("sanity regenerates inside the Poolrooms",
+				net.backrooms.sanity.SanityHandler.poolroomsRegenPerTick() > 0.0F);
+
+		int S = net.backrooms.worldgen.PoolroomsLayout.SPACING;
+
+		// ---- every ordinary maze room is fully roofed ----
+		int roofChecked = 0;
+		outerRoof:
+		for (int cx = -6; cx <= 6 && roofChecked < 24; cx++) {
+			for (int cz = -6; cz <= 6; cz++) {
+				if (pl.isGreatHall(cx, cz) || pl.isPoolCell(cx, cz)) {
+					continue;
+				}
+				// local (4,4) is an interior sub-room column away from partitions
+				int wx = cx * S + 4;
+				int wz = cz * S + 4;
+				if (pl.blocksColumn(wx, wz) || pl.isWaterColumn(wx, wz)) {
+					continue;
+				}
+				pool.getChunk(wx >> 4, wz >> 4, ChunkStatus.FULL, true);
+				BlockState ceil = pool.getBlockState(BlockPos.containing(
+						wx, net.backrooms.worldgen.PoolroomsLayout.CEILING_Y, wz));
+				BlockState roof = pool.getBlockState(BlockPos.containing(
+						wx, net.backrooms.worldgen.PoolroomsLayout.ROOF_Y, wz));
+				BlockState gap = pool.getBlockState(BlockPos.containing(
+						wx, net.backrooms.worldgen.PoolroomsLayout.CEILING_Y - 1, wz));
+				check("maze room roofed at cell (" + cx + "," + cz + ")",
+						(ceil.is(ModBlocks.POOL_TILE) || ceil.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN))
+								&& roof.is(ModBlocks.FOUNDATION) && gap.isAir());
+				roofChecked++;
+				if (roofChecked >= 24) {
+					break outerRoof;
+				}
+			}
+		}
+		log("v1.0.5 roofed maze cells checked=" + roofChecked);
+		check("roofed maze cells were found to check", roofChecked >= 10);
+
+		// ---- the plan contains rare great halls ----
+		int halls = 0;
+		int[] hall = null;
+		for (int cx = -15; cx <= 15; cx++) {
+			for (int cz = -15; cz <= 15; cz++) {
+				if (pl.isGreatHall(cx, cz)) {
+					halls++;
+					if (hall == null) {
+						hall = new int[]{cx, cz};
+					}
+				}
+			}
+		}
+		log("v1.0.5 great halls in 31x31 cells=" + halls + " first="
+				+ (hall == null ? "none" : hall[0] + "," + hall[1]));
+		// 6% of 961 cells expects ~58; generous bounds keep CI deterministic.
+		check("great halls generate but stay rare", halls >= 10 && halls <= 120);
+
+		if (hall != null) {
+			int hx = hall[0] * S;
+			int hz = hall[1] * S;
+			for (int x = hx; x < hx + S; x++) {
+				for (int z = hz; z < hz + S; z++) {
+					pool.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
+				}
+			}
+			// interior point kept off the pillar (5/18) and lantern (4/12/20) grids
+			int ix = hx + 10;
+			int iz = hz + 10;
+			check("great hall has tiled floor",
+					pool.getBlockState(BlockPos.containing(ix,
+							net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y, iz)).is(ModBlocks.POOL_TILE));
+			check("great hall interior is open at roof height",
+					pool.getBlockState(BlockPos.containing(ix,
+							net.backrooms.worldgen.PoolroomsLayout.HALL_GLASS_ROOF_Y - 1, iz)).isAir());
+			check("great hall has a glass roof",
+					pool.getBlockState(BlockPos.containing(ix,
+							net.backrooms.worldgen.PoolroomsLayout.HALL_GLASS_ROOF_Y, iz))
+							.is(net.minecraft.world.level.block.Blocks.GLASS));
+			// west perimeter wall: tall, with a glass window band, capped solid
+			boolean foundWindow = false;
+			boolean wallTall = false;
+			for (int lz = 2; lz < S - 2; lz++) {
+				int wx = hx;
+				int wz = hz + lz;
+				if (pl.isPerimeterOpening(wx, wz)) {
+					continue;
+				}
+				BlockState band = pool.getBlockState(BlockPos.containing(wx,
+						net.backrooms.worldgen.PoolroomsLayout.HALL_WINDOW_MIN_Y, wz));
+				BlockState cap = pool.getBlockState(BlockPos.containing(wx,
+						net.backrooms.worldgen.PoolroomsLayout.HALL_WALL_TOP_Y, wz));
+				if (band.is(net.minecraft.world.level.block.Blocks.GLASS) && cap.is(ModBlocks.POOL_TILE)) {
+					foundWindow = true;
+				}
+				if (cap.is(ModBlocks.POOL_TILE)) {
+					wallTall = true;
+				}
+			}
+			check("great hall walls carry a window band of glass", foundWindow);
+			check("great hall walls rise above maze ceiling height", wallTall);
+			// Wall lines are owned by the cell on their + side, so the hall's
+			// east wall is the lx=0 line of the neighbouring cell - it must be
+			// tall there too (symmetry across the cell border).
+			int nz = hz + 12;
+			check("tall west wall resolves on the hall's own line",
+					pl.isTallWallColumn(hx, nz));
+			check("tall wall also resolves from the neighbour-owned east line",
+					pl.isTallWallColumn(hx + S, nz));
+			// Exhaustive border rule near spawn: an x-wall is tall iff either
+			// adjoining cell is a hall.
+			int tallRuleMismatches = 0;
+			for (int wx = -8 * S; wx <= 8 * S; wx += S) {
+				for (int wz = -8 * S + 3; wz < 8 * S - 3; wz += 5) {
+					if (Math.floorMod(wz, S) == 0) {
+						continue; // lattice corners use a four-cell rule
+					}
+					int ccx = Math.floorDiv(wx, S);
+					int ccz = Math.floorDiv(wz, S);
+					boolean expectTall = pl.isGreatHall(ccx, ccz) || pl.isGreatHall(ccx - 1, ccz);
+					if (pl.isTallWallColumn(wx, wz) != expectTall) {
+						tallRuleMismatches++;
+					}
+				}
+			}
+			check("tall-wall rule agrees on every sampled border", tallRuleMismatches == 0);
+		}
 	}
 
 

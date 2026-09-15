@@ -1,6 +1,6 @@
 package net.backrooms;
 
-import net.backrooms.mechanics.BacteriaSpawner;
+import net.backrooms.mechanics.StillLifeSpawner;
 import net.backrooms.mechanics.PoolPortalHandler;
 import net.backrooms.mechanics.PoolroomsEnvironmentHandler;
 import net.backrooms.mechanics.SandHelmetHandler;
@@ -39,7 +39,7 @@ public class Backrooms implements ModInitializer {
 
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			SandHelmetHandler.tick(server);
-			BacteriaSpawner.tick(server);
+			StillLifeSpawner.tick(server);
 			PoolPortalHandler.tick(server);
 			PoolroomsEnvironmentHandler.tick(server);
 			SanityHandler.tick(server);

@@ -3,7 +3,7 @@ package net.backrooms.mechanics;
 import net.backrooms.BackroomsConfig;
 import net.backrooms.ModEntities;
 import net.backrooms.ModWorldgen;
-import net.backrooms.entity.BacteriaEntity;
+import net.backrooms.entity.StillLifeEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -11,27 +11,25 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 
 /**
- * Deliberately lightweight natural spawner for the Bacteria.
+ * Deliberately lightweight natural spawner for the Still Life.
  *
  * <p>Vanilla monster spawning only happens in darkness, but Level 0 is mostly
- * brightly lit - so we run sparse, fully configurable per-player spawn
- * attempts. At most {@code bacteriaMaxNearPlayer} Bacteria may be near a
- * player, which caps entity counts for performance and keeps encounters rare.
- * Entities remain despawnable (vanilla hard-despawn rules apply).</p>
+ * brightly lit, so we run sparse, fully configurable per-player spawn attempts.
+ * A hard cap per player keeps encounters rare and entity counts small. Entities
+ * remain despawnable under vanilla rules.</p>
  */
-public final class BacteriaSpawner {
-	private BacteriaSpawner() {
+public final class StillLifeSpawner {
+	private StillLifeSpawner() {
 	}
 
 	public static void tick(MinecraftServer server) {
 		BackroomsConfig cfg = BackroomsConfig.INSTANCE;
-		if (!cfg.bacteriaEnabled) {
+		if (!cfg.stillLifeEnabled) {
 			return;
 		}
-		if (server.getTickCount() % Math.max(20, cfg.bacteriaSpawnIntervalTicks) != 0) {
+		if (server.getTickCount() % Math.max(20, cfg.stillLifeSpawnIntervalTicks) != 0) {
 			return;
 		}
 		ServerLevel level = server.getLevel(ModWorldgen.BACKROOMS_LEVEL);
@@ -45,12 +43,12 @@ public final class BacteriaSpawner {
 			if (player.isSpectator()) {
 				continue;
 			}
-			if (level.random.nextDouble() >= cfg.bacteriaSpawnChance) {
+			if (level.random.nextDouble() >= cfg.stillLifeSpawnChance) {
 				continue;
 			}
-			int count = level.getEntitiesOfClass(BacteriaEntity.class,
+			int count = level.getEntitiesOfClass(StillLifeEntity.class,
 					player.getBoundingBox().inflate(64.0)).size();
-			if (count >= cfg.bacteriaMaxNearPlayer) {
+			if (count >= cfg.stillLifeMaxNearPlayer) {
 				continue;
 			}
 			trySpawn(level, player, cfg);
@@ -58,8 +56,8 @@ public final class BacteriaSpawner {
 	}
 
 	private static void trySpawn(ServerLevel level, ServerPlayer player, BackroomsConfig cfg) {
-		double min = cfg.bacteriaMinSpawnDistance;
-		double max = cfg.bacteriaMaxSpawnDistance;
+		double min = cfg.stillLifeMinSpawnDistance;
+		double max = cfg.stillLifeMaxSpawnDistance;
 		for (int attempt = 0; attempt < 10; attempt++) {
 			double angle = level.random.nextDouble() * Math.PI * 2.0;
 			double dist = min + level.random.nextDouble() * (max - min);
@@ -69,26 +67,26 @@ public final class BacteriaSpawner {
 			if (ground == null) {
 				continue;
 			}
-			// Prefer gloom; occasionally spawn in a bright hall to keep you paranoid.
+			// They stand at the edge of the light more often than in it.
 			int light = level.getMaxLocalRawBrightness(ground.above());
-			if (light > 4 && level.random.nextFloat() < 0.7F) {
+			if (light > 6 && level.random.nextFloat() < 0.7F) {
 				continue;
 			}
-			BacteriaEntity bacteria = ModEntities.BACTERIA.create(level);
-			if (bacteria == null) {
+			StillLifeEntity still = ModEntities.STILL_LIFE.create(level);
+			if (still == null) {
 				return;
 			}
-			bacteria.moveTo(ground.getX() + 0.5, ground.getY() + 1.02, ground.getZ() + 0.5,
+			still.moveTo(ground.getX() + 0.5, ground.getY() + 1.02, ground.getZ() + 0.5,
 					level.random.nextFloat() * 360.0F, 0.0F);
-			bacteria.finalizeSpawn(level, level.getCurrentDifficultyAt(ground.above()),
+			still.finalizeSpawn(level, level.getCurrentDifficultyAt(ground.above()),
 					MobSpawnType.NATURAL, null);
-			if (level.addFreshEntity(bacteria)) {
+			if (level.addFreshEntity(still)) {
 				return;
 			}
 		}
 	}
 
-	/** Searches a short vertical range for a solid floor with two air blocks above. */
+	/** Searches a short vertical range for a solid floor with two air blocks. */
 	private static BlockPos findGround(Level level, int x, int z) {
 		BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 		for (int y = 72; y >= 58; y--) {

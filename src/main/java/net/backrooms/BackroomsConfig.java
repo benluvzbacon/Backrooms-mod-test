@@ -17,19 +17,18 @@ import java.util.Properties;
 public final class BackroomsConfig {
 	public static final BackroomsConfig INSTANCE = new BackroomsConfig();
 
-	// --- Bacteria spawning (the values most likely to need tuning) ---
-	public boolean bacteriaEnabled = true;
+	// --- Still Life spawning (the values most likely to need tuning) ---
+	public boolean stillLifeEnabled = true;
 	/** One spawn attempt per player happens every N ticks (200 = 10s). */
-	public int bacteriaSpawnIntervalTicks = 200;
-	/** Probability an attempt actually produces a Bacteria. */
-	public double bacteriaSpawnChance = 0.10D;
-	/** At most this many Bacteria near a player. */
-	public int bacteriaMaxNearPlayer = 2;
+	public int stillLifeSpawnIntervalTicks = 200;
+	/** Probability an attempt actually produces a Still Life. */
+	public double stillLifeSpawnChance = 0.10D;
+	/** At most this many Still Lives near a player. */
+	public int stillLifeMaxNearPlayer = 2;
 	/** Players won't see one appear closer than this. */
-	public int bacteriaMinSpawnDistance = 22;
+	public int stillLifeMinSpawnDistance = 22;
 	/** Spawn attempts search up to this far away. */
-	public int bacteriaMaxSpawnDistance = 46;
-	/** Ignore peaceful / gamerule-disabled spawning? (always respected anyway) */
+	public int stillLifeMaxSpawnDistance = 46;
 
 	// --- Sand helmet entry ---
 	/** Set to false to also accept red sand as a portal trigger. */
@@ -52,29 +51,31 @@ public final class BackroomsConfig {
 				Backrooms.LOGGER.warn("[Backrooms] failed to read config, using defaults", e);
 			}
 		}
-		bacteriaEnabled = Boolean.parseBoolean(props.getProperty("bacteriaEnabled", String.valueOf(bacteriaEnabled)));
-		bacteriaSpawnIntervalTicks = Integer.parseInt(
-				props.getProperty("bacteriaSpawnIntervalTicks", String.valueOf(bacteriaSpawnIntervalTicks)));
-		bacteriaSpawnChance = Double.parseDouble(
-				props.getProperty("bacteriaSpawnChance", String.valueOf(bacteriaSpawnChance)));
-		bacteriaMaxNearPlayer = Integer.parseInt(
-				props.getProperty("bacteriaMaxNearPlayer", String.valueOf(bacteriaMaxNearPlayer)));
-		bacteriaMinSpawnDistance = Integer.parseInt(
-				props.getProperty("bacteriaMinSpawnDistance", String.valueOf(bacteriaMinSpawnDistance)));
-		bacteriaMaxSpawnDistance = Integer.parseInt(
-				props.getProperty("bacteriaMaxSpawnDistance", String.valueOf(bacteriaMaxSpawnDistance)));
+		// Accept the old bacteria* keys from pre-1.0.5 configs as fallbacks.
+		stillLifeEnabled = Boolean.parseBoolean(props.getProperty("stillLifeEnabled",
+				props.getProperty("bacteriaEnabled", String.valueOf(stillLifeEnabled)))));
+		stillLifeSpawnIntervalTicks = Integer.parseInt(props.getProperty("stillLifeSpawnIntervalTicks",
+				props.getProperty("bacteriaSpawnIntervalTicks", String.valueOf(stillLifeSpawnIntervalTicks))));
+		stillLifeSpawnChance = Double.parseDouble(props.getProperty("stillLifeSpawnChance",
+				props.getProperty("bacteriaSpawnChance", String.valueOf(stillLifeSpawnChance))));
+		stillLifeMaxNearPlayer = Integer.parseInt(props.getProperty("stillLifeMaxNearPlayer",
+				props.getProperty("bacteriaMaxNearPlayer", String.valueOf(stillLifeMaxNearPlayer))));
+		stillLifeMinSpawnDistance = Integer.parseInt(props.getProperty("stillLifeMinSpawnDistance",
+				props.getProperty("bacteriaMinSpawnDistance", String.valueOf(stillLifeMinSpawnDistance))));
+		stillLifeMaxSpawnDistance = Integer.parseInt(props.getProperty("stillLifeMaxSpawnDistance",
+				props.getProperty("bacteriaMaxSpawnDistance", String.valueOf(stillLifeMaxSpawnDistance))));
 		normalSandOnly = Boolean.parseBoolean(props.getProperty("normalSandOnly", String.valueOf(normalSandOnly)));
 		save();
 	}
 
 	public void save() {
 		Properties props = new Properties();
-		props.setProperty("bacteriaEnabled", String.valueOf(bacteriaEnabled));
-		props.setProperty("bacteriaSpawnIntervalTicks", String.valueOf(bacteriaSpawnIntervalTicks));
-		props.setProperty("bacteriaSpawnChance", String.valueOf(bacteriaSpawnChance));
-		props.setProperty("bacteriaMaxNearPlayer", String.valueOf(bacteriaMaxNearPlayer));
-		props.setProperty("bacteriaMinSpawnDistance", String.valueOf(bacteriaMinSpawnDistance));
-		props.setProperty("bacteriaMaxSpawnDistance", String.valueOf(bacteriaMaxSpawnDistance));
+		props.setProperty("stillLifeEnabled", String.valueOf(stillLifeEnabled));
+		props.setProperty("stillLifeSpawnIntervalTicks", String.valueOf(stillLifeSpawnIntervalTicks));
+		props.setProperty("stillLifeSpawnChance", String.valueOf(stillLifeSpawnChance));
+		props.setProperty("stillLifeMaxNearPlayer", String.valueOf(stillLifeMaxNearPlayer));
+		props.setProperty("stillLifeMinSpawnDistance", String.valueOf(stillLifeMinSpawnDistance));
+		props.setProperty("stillLifeMaxSpawnDistance", String.valueOf(stillLifeMaxSpawnDistance));
 		props.setProperty("normalSandOnly", String.valueOf(normalSandOnly));
 		try {
 			Files.createDirectories(file().getParent());

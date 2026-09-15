@@ -48,8 +48,9 @@ jobs:
             "net/backrooms/mixin/LevelMixin.class" \
             "net/backrooms/client/mixin/ClientLevelMixin.class" \
             "net/backrooms/item/AlmondWaterItem.class" \
-            "net/backrooms/entity/BacteriaEntity.class" \
-            "net/backrooms/client/BacteriaRenderer.class" \
+            "net/backrooms/entity/StillLifeEntity.class" \
+            "net/backrooms/entity/StillLifeHuntGoal.class" \
+            "net/backrooms/client/StillLifeRenderer.class" \
             "backrooms.mixins.json" \
             "backrooms.client.mixins.json" \
             "data/backrooms/dimension/backrooms.json" \
@@ -60,7 +61,8 @@ jobs:
             "data/backrooms/loot_table/chests/supply.json" \
             "assets/backrooms/textures/item/almond_water.png" \
             "assets/backrooms/icon.png" \
-            "assets/backrooms/textures/entity/bacteria.png" \
+            "assets/backrooms/textures/entity/still_life.png" \
+            "assets/backrooms/sounds/still_life/ambient.ogg" \
             "assets/backrooms/sounds/ambient/hum.ogg"; do
             if ! grep -q "$entry" /tmp/jarlist.txt; then
               echo "::error title=jar contents::missing $entry in $JAR"

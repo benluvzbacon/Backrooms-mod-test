@@ -13,7 +13,7 @@ public final class ModCreativeTabs {
 
 	public static void initialize() {
 		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries ->
-				entries.accept(ModItems.BACTERIA_SPAWN_EGG));
+				entries.accept(ModItems.STILL_LIFE_SPAWN_EGG));
 
 		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(entries ->
 				entries.accept(ModItems.ALMOND_WATER));

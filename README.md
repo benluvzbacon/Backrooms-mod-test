@@ -2,15 +2,19 @@
 
 Put **sand on your head** and noclip into an endless, procedurally generated
 **Level 0** — yellow rooms, damp carpet, humming fluorescent lights, long
-hallways, junctions, dead ends, and the **Bacteria** hunting you through it
-all. Find a glowing **Pool Portal** and wade into the **Poolrooms**, an open-sky
-maze of pale tiles and shallow water on a fast 5-minute day/night cycle, watch
-your **Sanity**, and seek out **Almond Water** in rare supply chests. Built for
+hallways, junctions, dead ends, and the **Still Life** — a tricorn-hatted
+mannequin that only moves when you aren't looking at it — hunting you through
+it all. Find a glowing **Pool Portal** and wade into the **Poolrooms**, a
+roofed indoor tile maze of shallow water on a fast 5-minute day/night cycle
+where your **Sanity slowly returns**, and seek out **Almond Water** in rare
+supply chests. Rare, towering **great halls** break the maze: ringed with
+windows under a glass roof, they are the only rooms open to the sky. Built for
 **Minecraft Java Edition 1.21.1** with the **Fabric** mod loader.
 
 > Core loop: **sand helmet → enter the Backrooms → explore the infinite
-> procedural Level 0 → loot Almond Water → find a Pool Portal → survive the
-> Poolrooms and the Bacteria while keeping your Sanity.**
+> procedural Level 0 → loot Almond Water → find a Pool Portal → recover your
+> Sanity in the roofed Poolrooms, and don't take your eyes off the Still
+> Life.**
 
 ---
 
@@ -36,17 +40,18 @@ your **Sanity**, and seek out **Almond Water** in rare supply chests. Built for
    it fires exactly once and never spams teleports. If you somehow end up with
    sand on your head in the Overworld again (e.g. `/item`), it teleports you
    once more.
-5. Wander. Watch the lights. Listen for the growl.
+5. Wander. Watch the lights. If you see the Still Life, don't blink.
 
 ### Sanity
 
 A **Sanity** readout appears above your hotbar while you're in the Backrooms.
-It slowly drains inside any Backrooms level — **twice as fast in darkness** and
-several times faster with a **Bacteria nearby**. Below one third you start
-seeing darkness pulse at the edges of your vision; below that come nausea,
-weakness and slowness. Sanity **regenerates slowly in the Overworld** and is
-restored instantly by drinking **Almond Water**. Sanity is saved with the
-player and kept across death.
+It drains in Level 0 — **twice as fast in darkness** and several times faster
+when the Still Life is near (the HUD flashes *DON'T BLINK*). Below one third
+you start seeing darkness pulse at the edges of your vision; below that come
+nausea, weakness and slowness. Sanity **regenerates in the Overworld** and —
+gently — **while you stay in the Poolrooms**, and is restored instantly by
+drinking **Almond Water**. Sanity is saved with the player and kept across
+death.
 
 ### Supply chests and Almond Water
 
@@ -63,10 +68,17 @@ Some Level 0 corridors hide a 3×3 **Pool Portal pad**: a ring of sea lanterns
 around a shimmering turquoise portal block. Walk into it to enter
 `backrooms:poolrooms` — a second infinite procedural dimension:
 
-- Pale tiled rooms and walls with wide archways, shallow still-water pools a
-  single block deep, lamp-topped pillars and wall lamps.
-- Open sky with a **5-minute full day/night cycle** (2½ minutes of day,
-  2½ minutes of night) driven independently of the Overworld clock.
+- An **indoor, fully roofed maze**: tiled partitions with doorways laid out by
+  a depth-first spanning tree (every room reachable), shallow still-water
+  pools a single block deep, ceiling lamps and lamp pillars. Wide archways
+  connect every cell.
+- Rare **great halls** — roughly one room in sixteen — have no partitions and
+  walls twice as tall, ringed by a band of high **windows** under a full
+  **glass roof**. They are the only places in the Poolrooms where you can see
+  the sky and the fast sun.
+- The Poolrooms run on a **5-minute full day/night cycle** (2½ minutes of day,
+  2½ minutes of night), visible through the glass of the great halls and
+  driven independently of the Overworld clock.
 - **During the day the pool water runs hot** — swimming while the sun is up
   scalds you (2 fire damage per second) and warns you in the hotbar. The water
   is safe after dark. Plan your crossings, or move at night.
@@ -81,15 +93,19 @@ The Poolrooms are an exit onward from Level 0, not from the Backrooms — dying
 still uses normal Minecraft respawn rules (you wake up back in the Overworld
 at your spawn point, and your Sanity comes with you).
 
-### The Bacteria
+### The Still Life
 
-- A tall, emaciated humanoid that wanders the halls, senses players (even
-  through walls), and sprints into melee range.
+- A tall, gaunt mannequin in a **tricorn hat**, black beard, blood-streaked
+  yellow vest and teal sleeves, standing posed in the halls.
+- **It cannot move while anyone is looking at it** — not a twitch; it simply
+  stands there, head slowly turning to meet your eyes. The instant line of
+  sight is broken (you turn away, blink around a corner, look at a friend),
+  it **sprints the gap** and attacks in a flurry of creaking timber.
 - It is **uncommon by design**. A custom, configurable spawner places at most
   a couple near each player, mostly in dim areas. It respects
   `doMobSpawning` and disappears on **Peaceful** difficulty.
-- In a pinch you can spawn one for testing with the **Bacteria Spawn Egg**
-  (creative menu) or `/summon backrooms:bacteria`.
+- In a pinch you can spawn one for testing with the **Still Life Spawn Egg**
+  (creative menu) or `/summon backrooms:still_life`.
 
 ---
 
@@ -117,8 +133,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.4.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.4-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.5.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.5-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -137,7 +153,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.4.jar`** in `mods/`.
+3. Put **`backrooms-1.0.5.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -148,12 +164,12 @@ On first server start the mod writes `config/backrooms.properties`:
 
 | Property | Default | Meaning |
 | --- | --- | --- |
-| `bacteriaEnabled` | `true` | Master switch for the custom spawner |
-| `bacteriaSpawnIntervalTicks` | `200` | Attempt a spawn for each player every N ticks (20 ticks = 1 s) |
-| `bacteriaSpawnChance` | `0.10` | Probability an attempt actually spawns one |
-| `bacteriaMaxNearPlayer` | `2` | Hard cap on Bacteria within 64 blocks of a player |
-| `bacteriaMinSpawnDistance` | `22` | Never spawn closer than this |
-| `bacteriaMaxSpawnDistance` | `46` | Search out to this distance |
+| `stillLifeEnabled` | `true` | Master switch for the custom spawner (old `bacteria*` keys still read) |
+| `stillLifeSpawnIntervalTicks` | `200` | Attempt a spawn for each player every N ticks (20 ticks = 1 s) |
+| `stillLifeSpawnChance` | `0.10` | Probability an attempt actually spawns one |
+| `stillLifeMaxNearPlayer` | `2` | Hard cap on Still Lives within 64 blocks of a player |
+| `stillLifeMinSpawnDistance` | `22` | Never spawn closer than this |
+| `stillLifeMaxSpawnDistance` | `46` | Search out to this distance |
 | `normalSandOnly` | `true` | Reserved for later (red sand option) |
 
 ---
@@ -207,24 +223,38 @@ light engine — no per-block custom calculations.
   block state changes, so relighting is incremental. About 1 in 4 room
   fixtures has an entity, keeping block-entity counts negligible.
 
-### Bacteria spawning
+### Still Life spawning and the freeze rule
 
 Vanilla monster spawning requires darkness; Level 0 is mostly lit, so
-`BacteriaSpawner` runs sparse per-player attempts, finds a real carpet-floor
+`StillLifeSpawner` runs sparse per-player attempts, finds a real carpet-floor
 position with headroom 22–46 blocks away (preferring dim spots), enforces a
-near-player cap, and spawns a normal despawnable monster that uses vanilla
-goal-based AI and navigation through the generated doorways.
+near-player cap, and spawns a normal despawnable monster using vanilla
+navigation through the generated doorways. Its single custom goal
+(`StillLifeHuntGoal`) scans nearby players every tick: while any player faces
+it within 48 blocks with line of sight, it stops dead and only turns its
+head; unseen, it sprints at the target and strikes. The check is a view-vector
+dot product plus vanilla `hasLineOfSight`, so pillars, corners and genuine
+blinks all release it.
 
 ### The Poolrooms generator
 
 `PoolroomsLayout` is the same pure-function technique applied a second way:
 
 - A 24-block lattice of pool-tile walls with **two wide archways per segment**
-  guarantees every room connects to its neighbours (flood-fill verified for
-  zero enclosed pockets in the self-test).
-- Each cell is a shallow **pool** (a 1-block-deep, 18×18 basin of still water
-  with a 3-block tiled deck around it) or a dry **deck** with lamp-capped tile
-  pillars. Walls are 9 tall with sea-lantern caps at night; the sky is open.
+  guarantees every cell connects to its neighbours (flood-fill verified for
+  zero enclosed pockets across many seeds in `tools/sim_pool105.py` and the
+  in-game self-test).
+- Every ordinary cell is a **roofed maze room**: two partition lines divide
+  it into a 3×3 of sub-rooms, and a deterministic per-cell depth-first
+  spanning tree (plus ~12% loop openings) cuts the doorways, so every room is
+  reachable and the maze never repeats a visible 16×16 pattern. 45% of cells
+  hold a shallow pool; the rest are dry decks. A tile ceiling with embedded
+  sea-lantern lamps and a foundation roof close every room at y70/71.
+- About 6% of cells are **great halls**: no partitions, walls up to y85 with a
+  continuous glass **window band** (y78–81), four tall lamp pillars, hanging
+  lanterns and a full **glass roof at y86** — the only Poolrooms columns open
+  to the sky. Walls bordering a hall are tall on both sides, so the feature
+  agrees across chunk and cell borders.
 - Rare 3×3 portal pads (sea-lantern ring + `pool_portal` centre) return the
   player to Level 0; Level 0's pads enter it.
 - The fast day/night phase is owned by `PoolroomsEnvironmentHandler`, because
@@ -252,7 +282,7 @@ src/main/java/net/backrooms/
 ├── config/BackroomsConfig         # tunables (spawn rates today, more later)
 ├── mechanics/
 │   ├── SandHelmetHandler.java     # entry trigger + survival equip action
-│   ├── BacteriaSpawner.java       # custom natural spawner
+│   ├── StillLifeSpawner.java      # custom natural spawner
 │   ├── PoolPortalHandler.java     # Level 0 <-> Poolrooms teleport pads
 │   └── PoolroomsEnvironmentHandler.java  # 5-minute cycle + hot daytime water
 ├── sanity/
@@ -264,11 +294,11 @@ src/main/java/net/backrooms/
 │   ├── PoolroomsChunkGenerator.java + PoolroomsLayout.java
 │   └── block/                     # fluorescent/flicker + non-solid pool portal
 ├── mixin/LevelMixin.java          # independent Poolrooms clock (server)
-├── entity/BacteriaEntity.java     # goals/attributes/sounds
+├── entity/StillLifeEntity.java    # attributes/sounds + StillLifeHuntGoal (freeze rule)
 └── selftest/SelfTest.java         # CI headless smoke test
 src/client/java/net/backrooms/client/  # model, renderer, dimension effects
 tools/gen_textures.py, gen_sounds.py, gen_assets.py   # regenerate all assets
-tools/sim_layout.py, sim_pool.py   # headless connectivity/layout validators
+tools/sim_layout.py, sim_pool.py, sim_pool105.py   # headless layout validators
 ```
 
 Adding new Backrooms *levels* means adding another layout + dimension
@@ -291,14 +321,14 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.4.jar`.
+  download `backrooms-1.0.5.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
 
 A headless in-engine self-test also runs in CI, generating chunks thousands of
 blocks out, asserting full connectivity in both dimensions, correct block
-structure, lighting and Bacteria lifecycle, the sand-helmet teleport, supply
+structure, lighting and Still Life lifecycle, the sand-helmet teleport, supply
 chest loot and Almond Water, the Poolrooms water/pad generation, and the
 independent 5-minute clock (60+ assertions in total).
 
@@ -314,16 +344,19 @@ independent 5-minute clock (60+ assertions in total).
 - [x] Guaranteed connectivity (no sealed/unreachable pockets)
 - [x] Yellow/damp wallpaper, old carpet, acoustic ceiling, foundation, fixtures
 - [x] Bright lights, flickering lights, long blackouts, dark patches, ambient biome hum
-- [x] **Bacteria** entity with custom model, texture, sounds and melee AI
+- [x] **Still Life** entity (freezes under observation) with custom model, texture and sounds
 - [x] Uncommon, capped, configurable natural spawner (peaceful/gamerule aware)
-- [x] **Sanity system** — drains in the Backrooms (faster in darkness / near Bacteria),
+- [x] **Sanity system** — drains in the Backrooms (drains in darkness / near the Still Life; regenerates in the Poolrooms),
       low-sanity effects, action-bar HUD, Overworld regen, saved + kept on death
 - [x] **Almond Water** drink (60% sanity + regeneration), glass bottle returned,
       creative tab, custom texture
 - [x] **Supply chests** placed procedurally in Level 0 with a custom loot table
       (Almond Water + supporting supplies)
-- [x] **Poolrooms dimension** (`backrooms:poolrooms`): tile rooms, archways,
-      shallow pools, pillar/wall lamps, dedicated biome and chunk generator
+- [x] **Poolrooms dimension** (`backrooms:poolrooms`): fully roofed indoor
+      DFS maze of tile rooms and archways, shallow pools, ceiling/pillar
+      lamps, and rare tall **great halls** ringed with windows under a glass
+      roof (the only rooms open to the fast sky); dedicated biome and generator
+- [x] **Sanity regenerates while staying in the Poolrooms**
 - [x] **Pool Portal pads** in both dimensions with teleport, titles, sounds, cooldown
 - [x] **5-minute day/night cycle** independent of the Overworld (mixin-served clock,
       smooth client sun) and **hot water that scalds swimmers during the day**
@@ -338,7 +371,7 @@ independent 5-minute clock (60+ assertions in total).
   Overworld except dying (normal respawn) — more exits/levels come later.
 - The hot-water effect uses fire damage ticks; fire itself is extinguished by
   the water (you take damage without visually igniting).
-- Bacteria AI relies on vanilla navigation (robust in the 2-wide doorways); it
+- Still Life AI relies on vanilla navigation (robust in the 2-wide doorways); it
   cannot open doors (there are none) or break walls.
 - Mining through the floor drops you toward the void; mining through the roof
   reveals the dark shell above the ceiling.

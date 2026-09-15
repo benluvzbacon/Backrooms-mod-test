@@ -245,25 +245,176 @@ def almond_water_texture():
 
 almond_water_texture()
 
-# ---------------------------------------------------------------- bacteria
-def bacteria_texture():
-    S = 64
-    img = Image.new("RGBA", (S, S), (0, 0, 0, 255))
-    noise_fill(img, (74, 60, 48), jitter=14, seed=909)
-    # murky darker blotches
-    blotches(img, [(44, 34, 28), (58, 44, 34)], count=70, radius=(2, 7),
-             seed=910, alpha=90)
-    # pale stretched-skin patches
-    blotches(img, [(180, 168, 146), (150, 138, 120)], count=26, radius=(2, 6),
-             seed=911, alpha=75)
-    # reddish sores
-    blotches(img, [(122, 49, 40), (90, 36, 32)], count=22, radius=(1, 3),
-             seed=912, alpha=110)
-    img.save(os.path.join(ENTITY_DIR, "bacteria.png"))
-    print("wrote textures/entity/bacteria.png")
+# --------------------------------------------------------------- still life
+# The Still Life: a gaunt mannequin in a tricorn hat, black beard, yellow
+# blood-streaked vest over teal sleeves, black belt with gold buckle, grey sash.
+def sl_faces(u, v, w, h, d):
+    """Minecraft box UV rects: name -> (x0, y0, w, h) on the texture sheet."""
+    return {
+        "top": (u + d, v, w, d),
+        "bottom": (u + d + w, v, w, d),
+        "right": (u, v + d, d, h),
+        "front": (u + d, v + d, w, h),
+        "left": (u + d + w, v + d, d, h),
+        "back": (u + 2 * d + w, v + d, w, h),
+    }
 
 
-bacteria_texture()
+def sl_paint_rect(img, rect, base, jitter, seed, blotch=None):
+    r = random.Random(seed)
+    px = img.load()
+    x0, y0, w, h = rect
+    for y in range(y0, y0 + h):
+        for x in range(x0, x0 + w):
+            n = r.randint(-jitter, jitter)
+            px[x, y] = (clamp(base[0] + n), clamp(base[1] + n),
+                        clamp(base[2] + n), 255)
+    if blotch:
+        colors, count, radius, alpha, bseed = blotch
+        sub = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        sd = ImageDraw.Draw(sub)
+        br = random.Random(bseed)
+        for _ in range(count):
+            x = br.randint(x0, x0 + w - 1)
+            y = br.randint(y0, y0 + h - 1)
+            rad = br.randint(*radius)
+            col = br.choice(colors)
+            sd.ellipse([x - rad, y - rad, x + rad, y + rad], fill=(*col, alpha))
+        img.alpha_composite(sub)
+
+
+def still_life_texture():
+    S = 128
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    SKIN = (176, 170, 156)      # pale wooden-mannequin skin
+    TEAL = (127, 182, 164)      # long sleeves
+    VEST = (202, 184, 92)       # yellow vest / tunic
+    BLOOD = (106, 26, 24)       # dried blood streaks
+    BELT = (24, 22, 20)
+    GOLD = (214, 175, 64)
+    SASH = (122, 126, 134)      # grey sash
+    TROUSERS = (44, 47, 56)
+    BOOT = (26, 26, 30)
+    HAT = (30, 26, 20)
+    HAT_TRIM = (52, 44, 32)
+    BEARD = (22, 20, 18)
+
+    # ---- head 8x8x8 at (0,0)
+    for name, rect in sl_faces(0, 0, 8, 8, 8).items():
+        sl_paint_rect(img, rect, SKIN, 7, 1000 + hash(name) % 900)
+    # face features on the FRONT rect (8..16, 8..16): wide staring eyes
+    fx, fy = 8, 8
+    for ex in (fx + 1, fx + 5):  # two eye whites
+        d.rectangle([ex, fy + 2, ex + 2, fy + 3], fill=(238, 236, 228))
+        d.point((ex + 1, fy + 3), fill=(28, 24, 20))  # pupil
+    # dark carved brows
+    d.line([fx + 1, fy + 1, fx + 3, fy + 1], fill=(60, 52, 44))
+    d.line([fx + 4, fy + 1, fx + 6, fy + 1], fill=(60, 52, 44))
+    # a thin carved mouth line (the beard hides most of it)
+    d.line([fx + 2, fy + 6, fx + 5, fy + 6], fill=(96, 84, 70))
+
+    # ---- body 6x18x4 at (0,16): yellow vest
+    body = sl_faces(0, 16, 6, 18, 4)
+    for name, rect in body.items():
+        sl_paint_rect(img, rect, VEST, 9, 1100 + hash(name) % 900,
+                      blotch=([(158, 140, 64)], 10, (1, 3), 45, 1190))
+    # dried-blood streaks running down the vest (front + back)
+    for face_name, seed_off in (("front", 0), ("back", 50)):
+        x0, y0, w, h = body[face_name]
+        br = random.Random(1200 + seed_off)
+        for _ in range(7):
+            sx = x0 + br.randint(0, w - 1)
+            sy = y0 + br.randint(0, 4)
+            length = br.randint(3, 11)
+            for t in range(length):
+                xx = sx + (1 if br.random() < 0.3 else 0)
+                yy = sy + t
+                if 0 <= xx < S and 0 <= yy < y0 + h:
+                    img.putpixel((xx, yy), (*BLOOD, 255))
+
+    # grey sash diagonally across the front (shoulder to opposite hip)
+    fx0, fy0, fw, fh = body["front"]
+    for t in range(fh):
+        xx = fx0 + fw - 1 - int(t * (fw - 1) / max(1, fh - 1))
+        for wdt in range(2):
+            img.putpixel((xx + wdt, fy0 + t), (*SASH, 255))
+    # black belt around the waist (all four sides) + gold buckle on front
+    for face_name in ("front", "back", "left", "right"):
+        x0, y0, w, h = body[face_name]
+        for yy in range(y0 + 11, y0 + 14):
+            for xx in range(x0, x0 + w):
+                img.putpixel((xx, yy), (*BELT, 255))
+    bx0, by0, bw, bh = body["front"]
+    for xx in range(bx0 + bw // 2 - 1, bx0 + bw // 2 + 2):
+        for yy in range(by0 + 11, by0 + 14):
+            img.putpixel((xx, yy), (*GOLD, 255))
+
+    # ---- arms 3x18x3: teal sleeves, skin hands at the cuffs
+    for au in (24, 38):
+        arms = sl_faces(au, 16, 3, 18, 3)
+        for name, rect in arms.items():
+            sl_paint_rect(img, rect, TEAL, 8, 1300 + au + hash(name) % 900)
+        # darker cuff band and skin hand on the bottom two rows of each face
+        for name in ("front", "back", "left", "right"):
+            x0, y0, w, h = arms[name]
+            for xx in range(x0, x0 + w):
+                img.putpixel((xx, y0 + h - 5), (96, 146, 130, 255))
+                for yy in range(y0 + h - 2, y0 + h):
+                    img.putpixel((xx, yy), (*SKIN, 255))
+
+    # ---- legs 3x14x3: dark trousers with black boots
+    for lu in (0, 12):
+        legs = sl_faces(lu, 40, 3, 14, 3)
+        for name, rect in legs.items():
+            sl_paint_rect(img, rect, TROUSERS, 7, 1400 + lu + hash(name) % 900)
+        for name in ("front", "back", "left", "right"):
+            x0, y0, w, h = legs[name]
+            for yy in range(y0 + h - 3, y0 + h):
+                for xx in range(x0, x0 + w):
+                    img.putpixel((xx, yy), (*BOOT, 255))
+
+    # ---- beard 7x4x1 at (26,40): black beard slab on the chin
+    beard = sl_faces(26, 40, 7, 4, 1)
+    for name, rect in beard.items():
+        sl_paint_rect(img, rect, BEARD, 6, 1500 + hash(name) % 900)
+    # a few grey hairs / texture
+    bx, by, bw, bh = beard["front"]
+    br = random.Random(1550)
+    for _ in range(14):
+        img.putpixel((bx + br.randint(0, bw - 1), by + br.randint(0, bh - 1)),
+                     (70, 66, 60, 255))
+
+    # ---- tricorn hat: crown 6x5x6 at (44,40)
+    crown = sl_faces(44, 40, 6, 5, 6)
+    for name, rect in crown.items():
+        sl_paint_rect(img, rect, HAT, 5, 1600 + hash(name) % 900)
+    # wide flat brim 13x1x13 at (0,54)
+    brim = sl_faces(44, 64, 13, 1, 13)
+    for name, rect in brim.items():
+        sl_paint_rect(img, rect, HAT, 5, 1700 + hash(name) % 900)
+    # lighter trim along the brim edge on the top face
+    tx, ty, tw, th = brim["top"]
+    for xx in range(tx, tx + tw):
+        img.putpixel((xx, ty), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
+        img.putpixel((xx, ty + th - 1), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
+    for yy in range(ty, ty + th):
+        img.putpixel((tx, yy), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
+        img.putpixel((tx + tw - 1, yy), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
+    # three upturned brim flaps 11x1x7 sharing UV at (54,54)
+    flap = sl_faces(44, 92, 11, 1, 7)
+    for name, rect in flap.items():
+        sl_paint_rect(img, rect, HAT, 5, 1800 + hash(name) % 900)
+    fx2, fy2, fw2, fh2 = flap["top"]
+    for xx in range(fx2, fx2 + fw2):
+        img.putpixel((xx, fy2), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
+
+    img.save(os.path.join(ENTITY_DIR, "still_life.png"))
+    print("wrote textures/entity/still_life.png")
+
+
+still_life_texture()
 
 # ---------------------------------------------------------------- mod icon
 def icon():
@@ -299,10 +450,14 @@ def icon():
         col = (glow, glow + 12, glow - 4)
         d.rectangle([128 - w / 2, y - h / 2, 128 + w / 2, y + h / 2], fill=col)
 
-    # the Bacteria silhouette, tall and lanky, far down the hall
+    # the Still Life silhouette, tall and lanky, far down the hall
     cx = vp[0]
     feet = vp[1] + 30
     head_top = feet - 64
+    # tricorn hat: wide brim with three upturned corners
+    d.polygon([(cx - 13, head_top + 2), (cx, head_top - 9),
+               (cx + 13, head_top + 2), (cx + 8, head_top + 4),
+               (cx - 8, head_top + 4)], fill=(8, 7, 6))
     d.ellipse([cx - 7, head_top, cx + 7, head_top + 16], fill=(12, 10, 8))
     d.polygon([(cx - 7, head_top + 12), (cx + 7, head_top + 12),
                (cx + 9, feet - 18), (cx - 9, feet - 18)], fill=(12, 10, 8))

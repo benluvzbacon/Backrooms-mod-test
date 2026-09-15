@@ -8,9 +8,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 
 public final class ModItems {
-	public static final Item BACTERIA_SPAWN_EGG = register(
-			"bacteria_spawn_egg",
-			new SpawnEggItem(ModEntities.BACTERIA, 0x4A3C30, 0xC9B996, new Item.Properties()));
+	public static final Item STILL_LIFE_SPAWN_EGG = register(
+			"still_life_spawn_egg",
+			new SpawnEggItem(ModEntities.STILL_LIFE, 0x3E2C1C, 0x87B0A6, new Item.Properties()));
 
 	// Bottles do not stack, like vanilla potions (one glass bottle returned per drink).
 	public static final Item ALMOND_WATER = register(

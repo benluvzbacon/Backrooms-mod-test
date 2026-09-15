@@ -7,9 +7,9 @@ import net.minecraft.sounds.SoundEvent;
 
 public final class ModSounds {
 	public static final SoundEvent HUM = register("ambient.hum");
-	public static final SoundEvent BACTERIA_AMBIENT = register("bacteria.ambient");
-	public static final SoundEvent BACTERIA_HURT = register("bacteria.hurt");
-	public static final SoundEvent BACTERIA_DEATH = register("bacteria.death");
+	public static final SoundEvent STILL_LIFE_AMBIENT = register("still_life.ambient");
+	public static final SoundEvent STILL_LIFE_HURT = register("still_life.hurt");
+	public static final SoundEvent STILL_LIFE_DEATH = register("still_life.death");
 
 	private ModSounds() {
 	}

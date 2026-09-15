@@ -1,34 +1,35 @@
 {
+  "still_life.ambient": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:still_life/ambient"
+      }
+    ]
+  },
+  "still_life.hurt": {
+    "category": "hostile",
+    "sounds": [
+      {
+       
+        "name": "backrooms:still_life/hurt"
+      }
+    ]
+  },
+  "still_life.death": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:still_life/death"
+      }
+    ]
+  },
   "ambient.hum": {
     "category": "ambient",
     "sounds": [
       {
         "name": "backrooms:ambient/hum",
         "stream": true
-      }
-    ]
-  },
-  "bacteria.ambient": {
-    "category": "hostile",
-    "sounds": [
-      {
-        "name": "backrooms:bacteria/ambient"
-      }
-    ]
-  },
-  "bacteria.hurt": {
-    "category": "hostile",
-    "sounds": [
-      {
-        "name": "backrooms:bacteria/hurt"
-      }
-    ]
-  },
-  "bacteria.death": {
-    "category": "hostile",
-    "sounds": [
-      {
-        "name": "backrooms:bacteria/death"
       }
     ]
   }
