@@ -2,11 +2,13 @@ package net.backrooms.worldgen;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.backrooms.ModLoot;
 import net.backrooms.ModBlocks;
 import net.backrooms.worldgen.block.FluorescentBlock;
 import net.backrooms.worldgen.block.LightFlickerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
@@ -76,7 +78,16 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
 	@Override
 	public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structures) {
-		// No vanilla features - lights, rooms and Bacteria are handled ourselves.
+		// Rare supply chests holding Almond Water; everything else is handled in
+		// fillFromNoise (lights, rooms) or by the BacteriaSpawner.
+		Level0Layout layout = layout();
+		long packed = layout.supplyChestPos(chunk.getPos().x, chunk.getPos().z);
+		if (packed != Level0Layout.NO_POS) {
+			BlockPos chestPos = BlockPos.of(packed);
+			level.setBlock(chestPos, Blocks.CHEST.defaultBlockState(), 3);
+			RandomizableContainer.setBlockEntityLootTable(
+					level, level.getRandom(), chestPos, ModLoot.SUPPLY_CHEST);
+		}
 	}
 
 	@Override
@@ -124,6 +135,9 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 		BlockState wallDamp = ModBlocks.WALLPAPER_DAMP.defaultBlockState();
 		BlockState lightOn = ModBlocks.FLUORESCENT.defaultBlockState();
 		BlockState lightOff = lightOn.setValue(FluorescentBlock.LIT, false);
+		BlockState poolTile = ModBlocks.POOL_TILE.defaultBlockState();
+		BlockState seaLantern = Blocks.SEA_LANTERN.defaultBlockState();
+		BlockState portal = ModBlocks.POOL_PORTAL.defaultBlockState();
 
 		int baseX = chunk.getPos().getMinBlockX();
 		int baseZ = chunk.getPos().getMinBlockZ();
@@ -134,10 +148,12 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 				int z = baseZ + lz;
 				boolean wall = layout.isWallColumn(x, z);
 				BlockState wallState = layout.isDampWall(x, z) ? wallDamp : wallNormal;
+				int padRole = layout.poolPadRoleAt(x, z);
 
 				for (int y = 62; y <= 70; y++) {
 					BlockState state = columnState(layout, y, wall, wallState, carpet, foundation,
-							ceiling, lightOn, lightOff, air, x, z);
+							ceiling, lightOn, lightOff, air, x, z, padRole,
+							poolTile, seaLantern, portal);
 					chunk.setBlockState(pos.set(lx, y, lz), state, false);
 					ocean.update(lx, y, lz, state);
 					surface.update(lx, y, lz, state);
@@ -156,17 +172,27 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 
 	@SuppressWarnings("checkstyle:ParameterNumber")
 	private BlockState columnState(Level0Layout layout, int y, boolean wall, BlockState wallState,
-								BlockState carpet, BlockState foundation, BlockState ceiling,
-								BlockState lightOn, BlockState lightOff, BlockState air, int x, int z) {
+							BlockState carpet, BlockState foundation, BlockState ceiling,
+							BlockState lightOn, BlockState lightOff, BlockState air, int x, int z,
+							int padRole, BlockState poolTile, BlockState seaLantern, BlockState portal) {
 		if (y == 62 || y == 63 || y == 70) {
 			return foundation;
 		}
 		if (y == Level0Layout.FLOOR_Y) {
+			if (padRole == 1) {
+				return seaLantern; // lamp ring of the Poolrooms entrance
+			}
+			if (padRole == 2) {
+				return poolTile;
+			}
 			return carpet;
 		}
 		if (y == Level0Layout.CEILING_Y) {
 			if (wall) {
 				return ceiling; // never embed a fixture inside a wall
+			}
+			if (padRole == 2) {
+				return lightOn; // always brightly lit above the portal
 			}
 			return switch (layout.fixtureAt(x, z)) {
 				case Level0Layout.FIXTURE_LIT, Level0Layout.FIXTURE_FLICKER -> lightOn;
@@ -175,6 +201,9 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 			};
 		}
 		// Interior band 65..68
+		if (!wall && padRole == 2 && y == 65) {
+			return portal;
+		}
 		return wall ? wallState : air;
 	}
 
@@ -199,6 +228,10 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 		BlockState ceiling = ModBlocks.CEILING_TILE.defaultBlockState();
 		BlockState lightOn = ModBlocks.FLUORESCENT.defaultBlockState();
 		BlockState lightOff = lightOn.setValue(FluorescentBlock.LIT, false);
+		BlockState poolTile = ModBlocks.POOL_TILE.defaultBlockState();
+		BlockState seaLantern = Blocks.SEA_LANTERN.defaultBlockState();
+		BlockState portal = ModBlocks.POOL_PORTAL.defaultBlockState();
+		int padRole = layout.poolPadRoleAt(x, z);
 
 		for (int i = 0; i < height; i++) {
 			int y = minY + i;
@@ -206,10 +239,12 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 			if (y == 62 || y == 63 || y == 70) {
 				state = foundation;
 			} else if (y == Level0Layout.FLOOR_Y) {
-				state = carpet;
+				state = padRole == 1 ? seaLantern : padRole == 2 ? poolTile : carpet;
 			} else if (y == Level0Layout.CEILING_Y) {
 				if (wall) {
 					state = ceiling;
+				} else if (padRole == 2) {
+					state = lightOn;
 				} else {
 					state = switch (layout.fixtureAt(x, z)) {
 						case Level0Layout.FIXTURE_LIT, Level0Layout.FIXTURE_FLICKER -> lightOn;
@@ -218,7 +253,9 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 					};
 				}
 			} else if (y >= 65 && y <= 68) {
-				state = wall ? wallState : air;
+				state = !wall && padRole == 2 && y == 65
+						? portal
+						: wall ? wallState : air;
 			} else {
 				state = air;
 			}

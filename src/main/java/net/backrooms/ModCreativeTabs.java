@@ -15,6 +15,9 @@ public final class ModCreativeTabs {
 		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries ->
 				entries.accept(ModItems.BACTERIA_SPAWN_EGG));
 
+		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(entries ->
+				entries.accept(ModItems.ALMOND_WATER));
+
 		ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.BUILDING_BLOCKS).register(entries -> {
 			entries.accept(ModBlocks.WALLPAPER);
 			entries.accept(ModBlocks.WALLPAPER_DAMP);
@@ -22,6 +25,8 @@ public final class ModCreativeTabs {
 			entries.accept(ModBlocks.CEILING_TILE);
 			entries.accept(ModBlocks.FOUNDATION);
 			entries.accept(ModBlocks.FLUORESCENT);
+			entries.accept(ModBlocks.POOL_TILE);
+			entries.accept(ModBlocks.POOL_PORTAL);
 		});
 	}
 }

@@ -1,5 +1,6 @@
 package net.backrooms;
 
+import net.backrooms.item.AlmondWaterItem;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -10,6 +11,11 @@ public final class ModItems {
 	public static final Item BACTERIA_SPAWN_EGG = register(
 			"bacteria_spawn_egg",
 			new SpawnEggItem(ModEntities.BACTERIA, 0x4A3C30, 0xC9B996, new Item.Properties()));
+
+	// Bottles do not stack, like vanilla potions (one glass bottle returned per drink).
+	public static final Item ALMOND_WATER = register(
+			"almond_water",
+			new AlmondWaterItem(new Item.Properties().stacksTo(1)));
 
 	private ModItems() {
 	}

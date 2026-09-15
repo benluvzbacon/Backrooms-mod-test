@@ -1,7 +1,11 @@
 package net.backrooms;
 
 import net.backrooms.mechanics.BacteriaSpawner;
+import net.backrooms.mechanics.PoolPortalHandler;
+import net.backrooms.mechanics.PoolroomsEnvironmentHandler;
 import net.backrooms.mechanics.SandHelmetHandler;
+import net.backrooms.sanity.ModAttachments;
+import net.backrooms.sanity.SanityHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -23,6 +27,7 @@ public class Backrooms implements ModInitializer {
 		ModItems.initialize();
 		ModCreativeTabs.initialize();
 		ModWorldgen.initialize();
+		ModAttachments.initialize();
 
 		ServerLifecycleEvents.SERVER_STARTING.register(server -> {
 			BackroomsConfig.INSTANCE.load();
@@ -35,6 +40,9 @@ public class Backrooms implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			SandHelmetHandler.tick(server);
 			BacteriaSpawner.tick(server);
+			PoolPortalHandler.tick(server);
+			PoolroomsEnvironmentHandler.tick(server);
+			SanityHandler.tick(server);
 			// Fallback trigger for the headless self-test if SERVER_STARTED raced startup.
 			if (Boolean.getBoolean("backrooms.selftest")
 					&& !net.backrooms.selftest.SelfTest.DONE && server.getTickCount() > 40) {

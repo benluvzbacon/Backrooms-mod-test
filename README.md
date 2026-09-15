@@ -3,11 +3,14 @@
 Put **sand on your head** and noclip into an endless, procedurally generated
 **Level 0** — yellow rooms, damp carpet, humming fluorescent lights, long
 hallways, junctions, dead ends, and the **Bacteria** hunting you through it
-all. Built for **Minecraft Java Edition 1.21.1** with the **Fabric** mod
-loader.
+all. Find a glowing **Pool Portal** and wade into the **Poolrooms**, an open-sky
+maze of pale tiles and shallow water on a fast 5-minute day/night cycle, watch
+your **Sanity**, and seek out **Almond Water** in rare supply chests. Built for
+**Minecraft Java Edition 1.21.1** with the **Fabric** mod loader.
 
-> Core loop (v1): **sand helmet → enter the Backrooms → explore the infinite
-> procedural Level 0 → encounter the Bacteria → survive.**
+> Core loop: **sand helmet → enter the Backrooms → explore the infinite
+> procedural Level 0 → loot Almond Water → find a Pool Portal → survive the
+> Poolrooms and the Bacteria while keeping your Sanity.**
 
 ---
 
@@ -35,12 +38,48 @@ loader.
    once more.
 5. Wander. Watch the lights. Listen for the growl.
 
+### Sanity
+
+A **Sanity** readout appears above your hotbar while you're in the Backrooms.
+It slowly drains inside any Backrooms level — **twice as fast in darkness** and
+several times faster with a **Bacteria nearby**. Below one third you start
+seeing darkness pulse at the edges of your vision; below that come nausea,
+weakness and slowness. Sanity **regenerates slowly in the Overworld** and is
+restored instantly by drinking **Almond Water**. Sanity is saved with the
+player and kept across death.
+
+### Supply chests and Almond Water
+
+Rare **supply chests** generate in Level 0 (about one in every handful of
+chunks, always with headroom and loot attached). They usually contain one or
+more bottles of **Almond Water**, plus occasional food, lanterns and glow
+berries. Drinking Almond Water restores 60% sanity, grants a short regeneration
+burst, and returns the empty glass bottle. Bottles also show up in the
+**Food & Drinks** creative tab.
+
+### The Poolrooms and the exit
+
+Some Level 0 corridors hide a 3×3 **Pool Portal pad**: a ring of sea lanterns
+around a shimmering turquoise portal block. Walk into it to enter
+`backrooms:poolrooms` — a second infinite procedural dimension:
+
+- Pale tiled rooms and walls with wide archways, shallow still-water pools a
+  single block deep, lamp-topped pillars and wall lamps.
+- Open sky with a **5-minute full day/night cycle** (2½ minutes of day,
+  2½ minutes of night) driven independently of the Overworld clock.
+- **During the day the pool water runs hot** — swimming while the sun is up
+  scalds you (2 fire damage per second) and warns you in the hotbar. The water
+  is safe after dark. Plan your crossings, or move at night.
+- Matching portal pads lead **back to Level 0**. A short cooldown stops
+  instant bounce-back, and arrival always places you on dry tile.
+
 > **Tip:** dragging sand into the helmet slot with the mouse does **not** work
 > in a survival inventory screen — vanilla refuses non-armor items there. Use
 > one of the click routes above.
 
-There is no escape mechanic in v1 — dying uses normal Minecraft respawn
-rules (you wake up back in the Overworld at your spawn point).
+The Poolrooms are an exit onward from Level 0, not from the Backrooms — dying
+still uses normal Minecraft respawn rules (you wake up back in the Overworld
+at your spawn point, and your Sanity comes with you).
 
 ### The Bacteria
 
@@ -78,8 +117,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.2.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.2-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.3.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.3-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -98,7 +137,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.2.jar`** in `mods/`.
+3. Put **`backrooms-1.0.3.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -176,6 +215,24 @@ position with headroom 22–46 blocks away (preferring dim spots), enforces a
 near-player cap, and spawns a normal despawnable monster that uses vanilla
 goal-based AI and navigation through the generated doorways.
 
+### The Poolrooms generator
+
+`PoolroomsLayout` is the same pure-function technique applied a second way:
+
+- A 24-block lattice of pool-tile walls with **two wide archways per segment**
+  guarantees every room connects to its neighbours (flood-fill verified for
+  zero enclosed pockets in the self-test).
+- Each cell is a shallow **pool** (a 1-block-deep, 18×18 basin of still water
+  with a 3-block tiled deck around it) or a dry **deck** with lamp-capped tile
+  pillars. Walls are 9 tall with sea-lantern caps at night; the sky is open.
+- Rare 3×3 portal pads (sea-lantern ring + `pool_portal` centre) return the
+  player to Level 0; Level 0's pads enter it.
+- The fast day/night phase is owned by `PoolroomsEnvironmentHandler`, because
+  vanilla gives non-Overworld dimensions a read-only clock derived from the
+  Overworld. Small mixins into `Level`/`ClientLevel` expose the independent
+  phase so sky light, the sun/moon and the time packet all follow the 5-minute
+  cycle; the client advances its own copy 4× between server syncs.
+
 ### Scale / infinity
 
 The dimension uses a normal (finite-seed) world border at the engine's
@@ -195,22 +252,31 @@ src/main/java/net/backrooms/
 ├── config/BackroomsConfig         # tunables (spawn rates today, more later)
 ├── mechanics/
 │   ├── SandHelmetHandler.java     # entry trigger + survival equip action
-│   └── BacteriaSpawner.java       # custom natural spawner
+│   ├── BacteriaSpawner.java       # custom natural spawner
+│   ├── PoolPortalHandler.java     # Level 0 <-> Poolrooms teleport pads
+│   └── PoolroomsEnvironmentHandler.java  # 5-minute cycle + hot daytime water
+├── sanity/
+│   ├── ModAttachments.java        # persistent, death-copied Sanity attachment
+│   └── SanityHandler.java         # drain, low-sanity effects, action-bar HUD
+├── item/AlmondWaterItem.java      # drinkable sanity restore
 ├── worldgen/
-│   ├── BackroomsChunkGenerator.java
-│   ├── Level0Layout.java          # seed-deterministic floor plan ("Level N" seam)
-│   └── block/                     # fluorescent block + flicker block entity
+│   ├── BackroomsChunkGenerator.java + Level0Layout.java   # Level 0
+│   ├── PoolroomsChunkGenerator.java + PoolroomsLayout.java
+│   └── block/                     # fluorescent/flicker + non-solid pool portal
+├── mixin/LevelMixin.java          # independent Poolrooms clock (server)
 ├── entity/BacteriaEntity.java     # goals/attributes/sounds
 └── selftest/SelfTest.java         # CI headless smoke test
 src/client/java/net/backrooms/client/  # model, renderer, dimension effects
 tools/gen_textures.py, gen_sounds.py, gen_assets.py   # regenerate all assets
+tools/sim_layout.py, sim_pool.py   # headless connectivity/layout validators
 ```
 
-Adding new Backrooms *levels* later means adding another layout + dimension
-(level JSON + chunk generator), with `Level0Layout` as the template; items,
-entities, sounds, dimensions and game rules are all independently registered
-so new systems (sanity, objectives, loot, escape routes, multiplayer events)
-slot in without touching the existing code paths.
+Adding new Backrooms *levels* means adding another layout + dimension
+(dimension-type / dimension / biome JSON + chunk generator, registered in
+`ModWorldgen`), with `Level0Layout` / `PoolroomsLayout` as the two templates;
+items, entities, sounds, dimensions, attachments, loot tables and game rules
+are all independently registered so new systems (objectives, more loot,
+multiplayer events) slot in without touching the existing code paths.
 
 All textures and sounds in this mod are generated procedurally by the scripts
 in `tools/` (Python + Pillow + imageio-ffmpeg). **No external/copyrighted
@@ -225,18 +291,20 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.2.jar`.
+  download `backrooms-1.0.3.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
 
 A headless in-engine self-test also runs in CI, generating chunks thousands of
-blocks out, asserting full connectivity, correct block structure, lighting and
-Bacteria lifecycle, and the sand-helmet teleport.
+blocks out, asserting full connectivity in both dimensions, correct block
+structure, lighting and Bacteria lifecycle, the sand-helmet teleport, supply
+chest loot and Almond Water, the Poolrooms water/pad generation, and the
+independent 5-minute clock (60+ assertions in total).
 
 ---
 
-## Implemented features (v1)
+## Implemented features
 
 - [x] Sand-in-helmet-slot transport into a dedicated `backrooms:backrooms` dimension
 - [x] Sneak + right-click equip route for survival
@@ -248,18 +316,32 @@ Bacteria lifecycle, and the sand-helmet teleport.
 - [x] Bright lights, flickering lights, long blackouts, dark patches, ambient biome hum
 - [x] **Bacteria** entity with custom model, texture, sounds and melee AI
 - [x] Uncommon, capped, configurable natural spawner (peaceful/gamerule aware)
-- [x] Custom dimension type, biome, fog colour and empty sky/weather
+- [x] **Sanity system** — drains in the Backrooms (faster in darkness / near Bacteria),
+      low-sanity effects, action-bar HUD, Overworld regen, saved + kept on death
+- [x] **Almond Water** drink (60% sanity + regeneration), glass bottle returned,
+      creative tab, custom texture
+- [x] **Supply chests** placed procedurally in Level 0 with a custom loot table
+      (Almond Water + supporting supplies)
+- [x] **Poolrooms dimension** (`backrooms:poolrooms`): tile rooms, archways,
+      shallow pools, pillar/wall lamps, dedicated biome and chunk generator
+- [x] **Pool Portal pads** in both dimensions with teleport, titles, sounds, cooldown
+- [x] **5-minute day/night cycle** independent of the Overworld (mixin-served clock,
+      smooth client sun) and **hot water that scalds swimmers during the day**
+- [x] Custom dimension types, biomes, fog/sky colours, empty sky for Level 0
 - [x] Spawn egg + creative tabs, loot tables, English localisation
 - [x] Normal death/respawn behaviour
 - [x] Build artifact + release workflows, headless CI self-test, Gradle wrapper
 
 ## Known limitations / roadmap
 
-- No escape mechanic yet (death returns you to the Overworld).
+- Portals travel between Level 0 and the Poolrooms; there is no way back to the
+  Overworld except dying (normal respawn) — more exits/levels come later.
+- The hot-water effect uses fire damage ticks; fire itself is extinguished by
+  the water (you take damage without visually igniting).
 - Bacteria AI relies on vanilla navigation (robust in the 2-wide doorways); it
   cannot open doors (there are none) or break walls.
 - Mining through the floor drops you toward the void; mining through the roof
   reveals the dark shell above the ceiling.
 - Planned later: more levels and level transitions, more entities, items and
-  weapons, sanity system, rare/secret rooms, loot, objectives, random events,
-  richer pathfinding and multiplayer-tuned events.
+  weapons, rare/secret rooms, more loot, objectives, random events, richer
+  pathfinding and multiplayer-tuned events.

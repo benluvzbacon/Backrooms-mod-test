@@ -132,7 +132,9 @@ public final class SelfTest {
 			BlockState under = level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y - 1, z));
 			BlockState ceil = level.getBlockState(BlockPos.containing(x, Level0Layout.CEILING_Y, z));
 			BlockState interior = level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y + 2, z));
-			boolean ok = floor.is(ModBlocks.CARPET)
+			boolean onPad = floor.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)
+					|| floor.is(ModBlocks.POOL_TILE);
+			boolean ok = (floor.is(ModBlocks.CARPET) || onPad)
 					&& under.is(ModBlocks.FOUNDATION)
 					&& (ceil.is(ModBlocks.CEILING_TILE) || ceil.is(ModBlocks.FLUORESCENT))
 					&& (interior.isAir() || interior.is(ModBlocks.WALLPAPER) || interior.is(ModBlocks.WALLPAPER_DAMP));
@@ -150,7 +152,8 @@ public final class SelfTest {
 						wall.is(ModBlocks.WALLPAPER) || wall.is(ModBlocks.WALLPAPER_DAMP));
 			} else {
 				BlockState interior1 = level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y + 1, z));
-				check("open column stays clear at (" + x + "," + z + ")", interior1.isAir());
+				check("open column stays clear at (" + x + "," + z + ")",
+						interior1.isAir() || interior1.is(ModBlocks.POOL_PORTAL));
 			}
 		}
 		log("fixtures across probes: " + fixtures);
@@ -279,6 +282,248 @@ public final class SelfTest {
 		// The tick watcher must not trip on players in other worlds without sand.
 		net.backrooms.mechanics.SandHelmetHandler.tick(server);
 		check("tick handler runs cleanly", true);
+
+		runV103Checks(server);
+	}
+
+	// ------------------------------------------------------------ v1.0.3
+	private static void runV103Checks(MinecraftServer server) {
+		ServerLevel level = server.getLevel(ModWorldgen.BACKROOMS_LEVEL);
+		if (level == null) {
+			check("backrooms dimension available for v1.0.3 checks", false);
+			return;
+		}
+		// ---- Almond Water item registration and drinking behaviour ----
+		check("almond water item registered",
+				net.minecraft.core.registries.BuiltInRegistries.ITEM
+						.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("backrooms", "almond_water"))
+						== net.backrooms.ModItems.ALMOND_WATER);
+		var drinkFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
+				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-drink"));
+		drinkFake.getAbilities().instabuild = false;
+		net.backrooms.sanity.SanityHandler.set(drinkFake, 0.2F);
+		net.minecraft.world.item.ItemStack drinkStack =
+				new net.minecraft.world.item.ItemStack(net.backrooms.ModItems.ALMOND_WATER, 1);
+		net.minecraft.world.item.ItemStack remainder =
+				((net.backrooms.item.AlmondWaterItem) net.backrooms.ModItems.ALMOND_WATER)
+						.finishUsingItem(drinkStack, server.overworld(), drinkFake);
+		check("drinking almond water restores sanity",
+				Math.abs(net.backrooms.sanity.SanityHandler.get(drinkFake) - 0.8F) < 0.001F);
+		check("drinking almond water grants regeneration",
+				drinkFake.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION));
+		check("drinking almond water returns the glass bottle",
+				remainder.is(net.minecraft.world.item.Items.GLASS_BOTTLE));
+
+		// ---- Sanity attachment default/clamping ----
+		var sanityFake = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
+				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-sanity"));
+		check("sanity defaults to full",
+				Math.abs(net.backrooms.sanity.SanityHandler.get(sanityFake) - 1.0F) < 0.0001F);
+		net.backrooms.sanity.SanityHandler.set(sanityFake, 5.0F);
+		check("sanity clamps at maximum", net.backrooms.sanity.SanityHandler.get(sanityFake) == 1.0F);
+		net.backrooms.sanity.SanityHandler.set(sanityFake, -1.0F);
+		check("sanity clamps at zero", net.backrooms.sanity.SanityHandler.get(sanityFake) == 0.0F);
+		net.backrooms.sanity.SanityHandler.restore(sanityFake, 0.4F);
+		check("sanity restore adds up",
+				Math.abs(net.backrooms.sanity.SanityHandler.get(sanityFake) - 0.4F) < 0.0001F);
+
+		// ---- Supply chest loot table exists ----
+		net.minecraft.world.level.storage.loot.LootTable supplyTable =
+				server.reloadableRegistries().getLootTable(net.backrooms.ModLoot.SUPPLY_CHEST);
+		check("supply chest loot table loaded", supplyTable != null && supplyTable != net.minecraft.world.level.storage.loot.LootTable.EMPTY);
+
+		// ---- Level 0: supply chests and pool pads actually generate ----
+		for (int cx = -8; cx < 12; cx++) {
+			for (int cz = -8; cz < 12; cz++) {
+				level.getChunk(cx, cz, ChunkStatus.FULL, true);
+			}
+		}
+		int chests = 0;
+		boolean chestWithAlmondWater = false;
+		int portalBlocks = 0;
+		boolean ringOk = false;
+		var chestVisitor = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
+				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-chest"));
+		for (int x = -8 * 16; x < 12 * 16; x++) {
+			for (int z = -8 * 16; z < 12 * 16; z++) {
+				BlockPos p = BlockPos.containing(x, Level0Layout.FLOOR_Y + 1, z);
+				if (level.getBlockState(p).is(net.minecraft.world.level.block.Blocks.CHEST)) {
+					chests++;
+					check("chest sits on floor with headroom (" + x + "," + z + ")",
+							level.getBlockState(p.below()).is(ModBlocks.CARPET)
+									&& level.getBlockState(p.above()).isAir());
+					if (level.getBlockEntity(p) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
+						chest.unpackLootTable(chestVisitor);
+						for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+							if (chest.getItem(slot).is(net.backrooms.ModItems.ALMOND_WATER)) {
+								chestWithAlmondWater = true;
+							}
+						}
+					}
+				}
+				if (level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y + 1, z))
+						.is(ModBlocks.POOL_PORTAL)) {
+					portalBlocks++;
+					boolean ring = level.getBlockState(BlockPos.containing(x + 1, Level0Layout.FLOOR_Y, z))
+							.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)
+							&& level.getBlockState(BlockPos.containing(x - 1, Level0Layout.FLOOR_Y, z))
+							.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+					if (ring) {
+						ringOk = true;
+					}
+				}
+			}
+		}
+		log("level0 generated chests=" + chests + " portalBlocks=" + portalBlocks);
+		check("supply chests generate in Level 0", chests > 0);
+		check("a supply chest contained almond water", chestWithAlmondWater);
+		check("pool portal pads generate in Level 0", portalBlocks > 0);
+		check("portal pads have a sea-lantern ring", ringOk);
+
+		// ---- Poolrooms dimension: existence, plan and real generation ----
+		ServerLevel pool = server.getLevel(net.backrooms.ModWorldgen.POOLROOMS_LEVEL);
+		check("poolrooms dimension exists", pool != null);
+		if (pool == null) {
+			return;
+		}
+		net.backrooms.worldgen.PoolroomsLayout pl = new net.backrooms.worldgen.PoolroomsLayout(pool.getSeed());
+
+		// pure plan: connectivity flood fill (water basins are only 1 deep - passable)
+		int pr = 150;
+		Set<Long> pWalk = new HashSet<>();
+		Set<Long> pReach = new HashSet<>();
+		for (int x = -pr; x <= pr; x++) {
+			for (int z = -pr; z <= pr; z++) {
+				if (!pl.isWallColumn(x, z)) {
+					pWalk.add(pack(x, z));
+				}
+			}
+		}
+		// (0,0) is a wall lattice corner; find a guaranteed dry point nearby.
+		int[] pStart = null;
+		outer:
+		for (int x = 1; x <= 8; x++) {
+			for (int z = 1; z <= 8; z++) {
+				if (pl.isDryFloor(x, z)) {
+					pStart = new int[]{x, z};
+					break outer;
+				}
+			}
+		}
+		check("found a dry poolrooms flood-fill start", pStart != null);
+		if (pStart == null) {
+			pStart = new int[]{2, 2};
+		}
+		ArrayDeque<int[]> pq = new ArrayDeque<>();
+		pq.add(pStart);
+		pReach.add(pack(pStart[0], pStart[1]));
+		while (!pq.isEmpty()) {
+			int[] cur = pq.poll();
+			for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+				int nx = cur[0] + d[0];
+				int nz = cur[1] + d[1];
+				long key = pack(nx, nz);
+				if (pWalk.contains(key) && pReach.add(key)) {
+					pq.add(new int[]{nx, nz});
+				}
+			}
+		}
+		int pEnclosed = 0;
+		for (Long key : pWalk) {
+			int x = (int) (key >> 32);
+			int z = key.intValue();
+			if (Math.abs(x) <= pr - 50 && Math.abs(z) <= pr - 50 && !pReach.contains(key)) {
+				pEnclosed++;
+			}
+		}
+		log("poolrooms walkable=" + pWalk.size() + " reached=" + pReach.size()
+				+ " enclosed(interior)=" + pEnclosed);
+		check("poolrooms plan is fully connected", pEnclosed == 0);
+
+		// plan variety
+		int planWater = 0;
+		int planPads = 0;
+		for (int x = -120; x <= 120; x++) {
+			for (int z = -120; z <= 120; z++) {
+				if (pl.isWaterColumn(x, z)) {
+					planWater++;
+				}
+				if (pl.exitPadRoleAt(x, z) == 2) {
+					planPads++;
+				}
+			}
+		}
+		log("poolrooms plan waterColumns=" + planWater + " exitPads=" + planPads);
+		check("poolrooms plan contains water pools", planWater > 0);
+		check("poolrooms plan contains exit pads", planPads > 0);
+
+		// real chunk structure at scattered points
+		for (int[] pp : new int[][]{{0, 0}, {48, -48}, {-400, 300}, {2000, -1800}}) {
+			int x = pp[0];
+			int z = pp[1];
+			pool.getChunk(x >> 4, z >> 4, ChunkStatus.FULL, true);
+			BlockState floor = pool.getBlockState(
+					BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y, z));
+			BlockState under = pool.getBlockState(
+					BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.BASIN_FLOOR_Y, z));
+			boolean floorOk = floor.is(ModBlocks.POOL_TILE)
+					|| floor.is(net.minecraft.world.level.block.Blocks.WATER)
+					|| floor.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+			boolean underOk = under.is(ModBlocks.POOL_TILE) || under.is(ModBlocks.FOUNDATION);
+			check("poolrooms structure at (" + x + "," + z + ")", floorOk && underOk);
+		}
+
+		// real water and real portal blocks generated near spawn
+		for (int cx = -6; cx <= 6; cx++) {
+			for (int cz = -6; cz <= 6; cz++) {
+				pool.getChunk(cx, cz, ChunkStatus.FULL, true);
+			}
+		}
+		int realWater = 0;
+		int realPortal = 0;
+		for (int x = -100; x <= 100; x++) {
+			for (int z = -100; z <= 100; z++) {
+				if (pool.getBlockState(BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y, z))
+						.is(net.minecraft.world.level.block.Blocks.WATER)) {
+					realWater++;
+				}
+				if (pool.getBlockState(BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y + 1, z))
+						.is(ModBlocks.POOL_PORTAL)) {
+					realPortal++;
+				}
+			}
+		}
+		log("poolrooms generated water=" + realWater + " portals=" + realPortal);
+		check("poolrooms generate real pool water", realWater > 0);
+
+		// arrival search lands on dry tiled floor with two air blocks above
+		BlockPos poolSpawn = net.backrooms.mechanics.PoolPortalHandler.findPoolroomsSpawn(pool);
+		check("poolrooms arrival point is safe", poolSpawn != null
+				&& pool.getBlockState(poolSpawn).is(ModBlocks.POOL_TILE)
+				&& pool.getBlockState(poolSpawn.above()).isAir()
+				&& pool.getBlockState(poolSpawn.above(2)).isAir());
+
+		// ---- 5 minute day/night cycle and hot-water phase ----
+		check("cycle length is 6000 ticks (5 minutes)",
+				net.backrooms.mechanics.PoolroomsEnvironmentHandler.FULL_CYCLE_TICKS == 6000L);
+		check("water hot at dawn", net.backrooms.mechanics.PoolroomsEnvironmentHandler.isHotDaytime(0L));
+		check("water hot before noon", net.backrooms.mechanics.PoolroomsEnvironmentHandler.isHotDaytime(11999L));
+		check("water cool at dusk", !net.backrooms.mechanics.PoolroomsEnvironmentHandler.isHotDaytime(12000L));
+		check("water cool at midnight", !net.backrooms.mechanics.PoolroomsEnvironmentHandler.isHotDaytime(23999L));
+		check("water hot again next dawn", net.backrooms.mechanics.PoolroomsEnvironmentHandler.isHotDaytime(24000L));
+		net.backrooms.mechanics.PoolroomsEnvironmentHandler.resetPhaseForTest(0L);
+		net.backrooms.mechanics.PoolroomsEnvironmentHandler.tick(server);
+		check("poolrooms independent clock runs 4x and is read by the level",
+				net.backrooms.mechanics.PoolroomsEnvironmentHandler.currentPhase() == 4L
+						&& pool.getDayTime() == 4L);
+		net.backrooms.mechanics.PoolroomsEnvironmentHandler.resetPhaseForTest(12000L);
+		check("pool level reports night through the clock mixin", pool.getDayTime() == 12000L);
+
+		// the portal/environment/sanity tick handlers run with players present
+		net.backrooms.mechanics.PoolPortalHandler.clearCooldowns();
+		net.backrooms.mechanics.PoolPortalHandler.tick(server);
+		net.backrooms.sanity.SanityHandler.tick(server);
+		check("v1.0.3 tick handlers run cleanly", true);
 	}
 
 

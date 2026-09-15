@@ -54,6 +54,18 @@ public final class ModBlocks {
 					.sound(SoundType.GLASS)
 					.lightLevel(state -> state.getValue(FluorescentBlock.LIT) ? 15 : 0)));
 
+	/** White ceramic pool tile used throughout the Poolrooms. */
+	public static final Block POOL_TILE = register(
+			"pool_tile",
+			new Block(Block.Properties.of()
+					.strength(1.4F)
+					.sound(SoundType.STONE)));
+
+	/** Shimmering, non-solid portal surface between Level 0 and the Poolrooms. */
+	public static final Block POOL_PORTAL = register(
+			"pool_portal",
+			new net.backrooms.worldgen.block.PoolPortalBlock());
+
 	private ModBlocks() {
 	}
 

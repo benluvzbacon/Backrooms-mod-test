@@ -19,6 +19,16 @@
 			"net.backrooms.client.BackroomsClient"
 		]
 	},
+	"mixins": [
+		{
+			"config": "backrooms.mixins.json",
+			"environment": "*"
+		},
+		{
+			"config": "backrooms.client.mixins.json",
+			"environment": "client"
+		}
+	],
 	"depends": {
 		"fabricloader": ">=0.19.0",
 		"minecraft": "~1.21.1",

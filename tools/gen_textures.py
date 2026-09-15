@@ -16,8 +16,10 @@ from PIL import Image, ImageDraw
 ROOT = os.path.join(os.path.dirname(__file__), "..", "src", "main", "resources", "assets", "backrooms")
 BLOCK_DIR = os.path.join(ROOT, "textures", "block")
 ENTITY_DIR = os.path.join(ROOT, "textures", "entity")
+ITEM_DIR = os.path.join(ROOT, "textures", "item")
 os.makedirs(BLOCK_DIR, exist_ok=True)
 os.makedirs(ENTITY_DIR, exist_ok=True)
+os.makedirs(ITEM_DIR, exist_ok=True)
 
 RNG = random.Random(0xBAC0A001)
 
@@ -158,6 +160,90 @@ def fluorescent(name, lit):
 
 fluorescent("fluorescent.png", True)
 fluorescent("fluorescent_off.png", False)
+
+# ---------------------------------------------------------------- pool tile
+def pool_tile_texture(name):
+    img = Image.new("RGBA", (16, 16), (226, 232, 230, 255))
+    noise_fill(img, (228, 234, 232), jitter=5, seed=101)
+    px = img.load()
+    grout = (176, 188, 190, 255)
+    # small square ceramic tiles every 4 px with grout lines
+    for i in range(16):
+        if i % 4 == 3:
+            for j in range(16):
+                px[i, j] = grout
+                px[j, i] = grout
+    # faint glossy highlight on each tile
+    r = random.Random(102)
+    for tx in range(4):
+        for ty in range(4):
+            hx = tx * 4 + r.randint(0, 1)
+            hy = ty * 4 + r.randint(0, 1)
+            c = px[hx, hy]
+            px[hx, hy] = (clamp(c[0] + 18), clamp(c[1] + 18), clamp(c[2] + 16), 255)
+    save(img, name)
+
+
+pool_tile_texture("pool_tile.png")
+
+# ---------------------------------------------------------------- pool portal
+def pool_portal_texture(name):
+    img = Image.new("RGBA", (16, 16), (20, 120, 150, 255))
+    px = img.load()
+    cx = cy = 7.5
+    for y in range(16):
+        for x in range(16):
+            dx = x - cx
+            dy = y - cy
+            dist = math.sqrt(dx * dx + dy * dy)
+            angle = math.atan2(dy, dx)
+            # concentric wavy bands of teal and pale cyan
+            wave = math.sin(dist * 1.7 + angle * 2.0)
+            v = (wave + 1.0) * 0.5
+            rr = clamp(20 + v * 70 + max(0.0, 1.0 - dist / 9.0) * 90)
+            gg = clamp(120 + v * 90 + max(0.0, 1.0 - dist / 9.0) * 90)
+            bb = clamp(150 + v * 80 + max(0.0, 1.0 - dist / 9.0) * 70)
+            px[x, y] = (rr, gg, bb, 255)
+    # a few sparkle pixels
+    r = random.Random(103)
+    for _ in range(14):
+        x, y = r.randint(1, 14), r.randint(1, 14)
+        px[x, y] = (220, 250, 255, 255)
+    save(img, name)
+
+
+pool_portal_texture("pool_portal.png")
+
+# ---------------------------------------------------------------- almond water
+def almond_water_texture():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    glass = (178, 206, 214, 255)
+    glass_dark = (138, 168, 178, 255)
+    liquid = (240, 232, 204, 255)
+    liquid_shade = (222, 212, 178, 255)
+    cap = (120, 122, 130, 255)
+    # bottle cap
+    d.rectangle([7, 1, 8, 2], fill=cap)
+    # neck (glass)
+    d.rectangle([7, 3, 8, 6], fill=glass)
+    # shoulders and body
+    d.rectangle([6, 7, 9, 7], fill=glass)
+    d.rectangle([5, 8, 10, 13], fill=glass)
+    d.rectangle([5, 14, 10, 14], fill=glass_dark)
+    # almond-coloured liquid inside
+    d.rectangle([6, 9, 9, 13], fill=liquid)
+    d.rectangle([6, 12, 9, 13], fill=liquid_shade)
+    px = img.load()
+    # glass highlight
+    px[6, 8] = (220, 240, 246, 255)
+    px[6, 10] = (220, 240, 246, 255)
+    path = os.path.join(ITEM_DIR, "almond_water.png")
+    img.save(path)
+    print("wrote textures/item/almond_water.png")
+
+
+almond_water_texture()
 
 # ---------------------------------------------------------------- bacteria
 def bacteria_texture():

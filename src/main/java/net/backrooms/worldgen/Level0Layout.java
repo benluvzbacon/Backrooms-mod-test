@@ -46,6 +46,16 @@ public final class Level0Layout {
 	public static final int FIXTURE_FLICKER = 2;
 	public static final int FIXTURE_DEAD = 3;
 
+	// Rare special points (v1.0.3).
+	/** One chunk in N holds a Poolrooms entrance pad. */
+	public static final int POOL_PAD_CHUNK_MOD = 18;
+	/** One chunk in N holds a supply chest. */
+	public static final int SUPPLY_CHEST_CHUNK_MOD = 9;
+	/** Half-width of an entrance pad (1 -> 3x3). */
+	public static final int PAD_RADIUS = 1;
+	/** Sentinel "no packed position". */
+	public static final long NO_POS = Long.MIN_VALUE;
+
 	// Perimeter wall segment decisions.
 	private static final int SEG_MISSING = 0;
 	private static final int SEG_DOOR = 1;
@@ -555,6 +565,80 @@ public final class Level0Layout {
 
 	public boolean isDampWall(int x, int z) {
 		return rand01(3, x, z) < 0.15F;
+	}
+
+	// -------------------------------------------------- pool pads & chests
+
+	/**
+	 * Candidate centre of the Poolrooms entrance pad owned by the given chunk,
+	 * as a packed {@link net.minecraft.core.BlockPos} (y = floor), or
+	 * {@link #NO_POS} if this chunk hosts none / the candidate landed on walls.
+	 */
+	public long poolPadCenter(int chunkX, int chunkZ) {
+		if (Math.floorMod(hash(77, chunkX, chunkZ), POOL_PAD_CHUNK_MOD) != 0) {
+			return NO_POS;
+		}
+		int lx = 3 + (int) Math.floorMod(hash(78, chunkX, chunkZ), 10);
+		int lz = 3 + (int) Math.floorMod(hash(79, chunkX, chunkZ), 10);
+		int cx = chunkX * 16 + lx;
+		int cz = chunkZ * 16 + lz;
+		for (int dx = -PAD_RADIUS; dx <= PAD_RADIUS; dx++) {
+			for (int dz = -PAD_RADIUS; dz <= PAD_RADIUS; dz++) {
+				if (isWallColumn(cx + dx, cz + dz)) {
+					return NO_POS;
+				}
+			}
+		}
+		return net.minecraft.core.BlockPos.asLong(cx, FLOOR_Y, cz);
+	}
+
+	/** True for every column covered by an entrance pad (this or a neighbour chunk). */
+	public boolean isPoolPadColumn(int x, int z) {
+		return poolPadRoleAt(x, z) != 0;
+	}
+
+	/** 0 = not on a pad, 1 = surrounding ring, 2 = centre (portal column). */
+	public int poolPadRoleAt(int x, int z) {
+		int cx = Math.floorDiv(x, 16);
+		int cz = Math.floorDiv(z, 16);
+		for (int dcx = -1; dcx <= 1; dcx++) {
+			for (int dcz = -1; dcz <= 1; dcz++) {
+				long center = poolPadCenter(cx + dcx, cz + dcz);
+				if (center == NO_POS) {
+					continue;
+				}
+				net.minecraft.core.BlockPos cp = net.minecraft.core.BlockPos.of(center);
+				int dx = x - cp.getX();
+				int dz = z - cp.getZ();
+				if (Math.abs(dx) <= PAD_RADIUS && Math.abs(dz) <= PAD_RADIUS) {
+					return dx == 0 && dz == 0 ? 2 : 1;
+				}
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Position of the supply chest owned by this chunk (packed, y = feet),
+	 * or {@link #NO_POS}. Chosen columns are never walls or pad blocks.
+	 */
+	public long supplyChestPos(int chunkX, int chunkZ) {
+		if (Math.floorMod(hash(80, chunkX, chunkZ), SUPPLY_CHEST_CHUNK_MOD) != 0) {
+			return NO_POS;
+		}
+		long stream = hash(81, chunkX, chunkZ);
+		for (int attempt = 0; attempt < 6; attempt++) {
+			stream = stream * 0x5851F42D4C957F2DL + 0x14057B7EF767814FL;
+			int lx = 2 + (int) ((stream >>> 33) % 12);
+			stream = stream * 0x5851F42D4C957F2DL + 0x14057B7EF767814FL;
+			int lz = 2 + (int) ((stream >>> 33) % 12);
+			int x = chunkX * 16 + lx;
+			int z = chunkZ * 16 + lz;
+			if (!isWallColumn(x, z) && poolPadRoleAt(x, z) == 0) {
+				return net.minecraft.core.BlockPos.asLong(x, FLOOR_Y + 1, z);
+			}
+		}
+		return NO_POS;
 	}
 
 	// ------------------------------------------------------------- lighting

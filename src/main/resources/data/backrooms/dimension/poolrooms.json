@@ -1,0 +1,10 @@
+{
+  "type": "backrooms:poolrooms",
+  "generator": {
+    "type": "backrooms:poolrooms",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "backrooms:poolrooms"
+    }
+  }
+}

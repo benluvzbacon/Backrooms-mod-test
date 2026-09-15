@@ -44,10 +44,21 @@ jobs:
             "fabric.mod.json" \
             "net/backrooms/Backrooms.class" \
             "net/backrooms/worldgen/BackroomsChunkGenerator.class" \
+            "net/backrooms/worldgen/PoolroomsChunkGenerator.class" \
+            "net/backrooms/mixin/LevelMixin.class" \
+            "net/backrooms/client/mixin/ClientLevelMixin.class" \
+            "net/backrooms/item/AlmondWaterItem.class" \
             "net/backrooms/entity/BacteriaEntity.class" \
             "net/backrooms/client/BacteriaRenderer.class" \
+            "backrooms.mixins.json" \
+            "backrooms.client.mixins.json" \
             "data/backrooms/dimension/backrooms.json" \
+            "data/backrooms/dimension/poolrooms.json" \
+            "data/backrooms/dimension_type/poolrooms.json" \
             "data/backrooms/worldgen/biome/backrooms.json" \
+            "data/backrooms/worldgen/biome/poolrooms.json" \
+            "data/backrooms/loot_table/chests/supply.json" \
+            "assets/backrooms/textures/item/almond_water.png" \
             "assets/backrooms/icon.png" \
             "assets/backrooms/textures/entity/bacteria.png" \
             "assets/backrooms/sounds/ambient/hum.ogg"; do
