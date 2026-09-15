@@ -89,8 +89,8 @@ public final class PoolroomsLayout {
 
 	/** Two 5-wide archways per wall segment, one per half. */
 	private boolean inArch(long h, int local) {
-		int c1 = 5 + (int) floorMod(h, 5);
-		int c2 = 17 + (int) floorMod(h >>> 16, 4);
+		int c1 = 5 + (int) Math.floorMod(h, 5);
+		int c2 = 17 + (int) Math.floorMod(h >>> 16, 4);
 		return Math.abs(local - c1) <= ARCH_WIDTH / 2
 				|| Math.abs(local - c2) <= ARCH_WIDTH / 2;
 	}
@@ -132,7 +132,7 @@ public final class PoolroomsLayout {
 			return false;
 		}
 		int slot = slotX * 2 + slotZ;
-		return floorMod(hash(86, cellX, cellZ) >>> (slot * 8), 3) != 0;
+		return Math.floorMod(hash(86, cellX, cellZ) >>> (slot * 8), 3) != 0L;
 	}
 
 	/** True when a wall column carries a lamp on top this height step. */
