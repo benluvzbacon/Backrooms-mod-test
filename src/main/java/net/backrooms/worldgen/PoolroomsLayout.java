@@ -335,7 +335,17 @@ public final class PoolroomsLayout {
 
 	/** Lamp pillars: short in maze rooms, tall in great halls. */
 	public boolean isPillarColumn(int x, int z) {
-		if (isWallColumn(x, z) || exitPadRoleAt(x, z) != 0) {
+		// The pad lookup MUST stay out of the geometry tested while planning a
+		// pad (exitPadCenter) or the two methods recurse into a stack overflow.
+		if (exitPadRoleAt(x, z) != 0) {
+			return false;
+		}
+		return isPillarPlan(x, z);
+	}
+
+	/** Pillar geometry without consulting pad roles (also used to plan pads). */
+	private boolean isPillarPlan(int x, int z) {
+		if (isWallColumn(x, z)) {
 			return false;
 		}
 		int cellX = fdiv(x, SPACING);
@@ -401,7 +411,8 @@ public final class PoolroomsLayout {
 			boolean clear = true;
 			for (int dx = -PAD_RADIUS; dx <= PAD_RADIUS && clear; dx++) {
 				for (int dz = -PAD_RADIUS; dz <= PAD_RADIUS; dz++) {
-					if (blocksColumn(wx + dx, wz + dz)) {
+					// No pad lookup here: that would re-enter this method.
+					if (isWallColumn(wx + dx, wz + dz) || isPillarPlan(wx + dx, wz + dz)) {
 						clear = false;
 						break;
 					}
