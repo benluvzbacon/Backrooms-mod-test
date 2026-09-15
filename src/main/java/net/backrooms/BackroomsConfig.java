@@ -53,7 +53,7 @@ public final class BackroomsConfig {
 		}
 		// Accept the old bacteria* keys from pre-1.0.5 configs as fallbacks.
 		stillLifeEnabled = Boolean.parseBoolean(props.getProperty("stillLifeEnabled",
-				props.getProperty("bacteriaEnabled", String.valueOf(stillLifeEnabled)))));
+				props.getProperty("bacteriaEnabled", String.valueOf(stillLifeEnabled))));
 		stillLifeSpawnIntervalTicks = Integer.parseInt(props.getProperty("stillLifeSpawnIntervalTicks",
 				props.getProperty("bacteriaSpawnIntervalTicks", String.valueOf(stillLifeSpawnIntervalTicks))));
 		stillLifeSpawnChance = Double.parseDouble(props.getProperty("stillLifeSpawnChance",
