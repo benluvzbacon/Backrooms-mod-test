@@ -104,7 +104,7 @@ public final class PoolPortalHandler {
 
 	/** Finds dry tiled floor near the origin of the Poolrooms. */
 	public static BlockPos findPoolroomsSpawn(ServerLevel level) {
-		PoolroomsLayout layout = new PoolroomsLayout(level.getSeed());
+		PoolroomsLayout layout = new PoolroomsLayout(net.backrooms.worldgen.LevelSeeds.of(level));
 		for (int radius = 0; radius <= 48; radius++) {
 			for (int dz = -radius; dz <= radius; dz++) {
 				for (int dx = -radius; dx <= radius; dx++) {

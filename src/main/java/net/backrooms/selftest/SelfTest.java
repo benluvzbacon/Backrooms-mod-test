@@ -55,7 +55,9 @@ public final class SelfTest {
 		if (level == null) {
 			return;
 		}
-		long seed = level.getSeed();
+		long seed = net.backrooms.worldgen.LevelSeeds.of(level);
+		log("level0 worldgen seed=" + seed + " getSeed()=" + level.getSeed()
+				+ " equal=" + (seed == level.getSeed()));
 
 		// --- pure layout: connectivity flood fill over a large region ---
 		Level0Layout layout = new Level0Layout(seed);
@@ -293,6 +295,10 @@ public final class SelfTest {
 			check("backrooms dimension available for v1.0.3 checks", false);
 			return;
 		}
+		// The generators must have captured the same seed LevelSeeds hands out.
+		check("level0 generator captured the worldgen seed",
+				level.getChunkSource().getGenerator() instanceof net.backrooms.worldgen.BackroomsChunkGenerator bg
+						&& bg.getLayoutSeed() == net.backrooms.worldgen.LevelSeeds.of(level));
 		// ---- Almond Water item registration and drinking behaviour ----
 		check("almond water item registered",
 				net.minecraft.core.registries.BuiltInRegistries.ITEM
@@ -338,7 +344,7 @@ public final class SelfTest {
 				level.getChunk(cx, cz, ChunkStatus.FULL, true);
 			}
 		}
-		Level0Layout planLayout = new Level0Layout(level.getSeed());
+		Level0Layout planLayout = new Level0Layout(net.backrooms.worldgen.LevelSeeds.of(level));
 		int planPads = 0;
 		for (int cx = -8; cx < 12; cx++) {
 			for (int cz = -8; cz < 12; cz++) {
@@ -397,11 +403,16 @@ public final class SelfTest {
 				}
 			}
 		}
-		log("level0 generated chests=" + chests + " portalBlocks=" + portalBlocks + " ringBlocks=" + ringBlocks);
+		log("level0 generated chests=" + chests + " planPads=" + planPads
+				+ " portalBlocks=" + portalBlocks + " ringBlocks=" + ringBlocks);
 		check("supply chests generate in Level 0", chests > 0);
 		check("a supply chest contained almond water", chestWithAlmondWater);
 		check("pool portal pads generate in Level 0", portalBlocks > 0);
-		check("portal pads have a sea-lantern ring", ringOk);
+		// Pads stay inside their owning chunk (ring at local 2..13), so every
+		// accepted plan pad must correspond 1:1 to a portal block in world.
+		check("every planned Level 0 pad built a portal (" + planPads + " vs " + portalBlocks + ")",
+				portalBlocks == planPads);
+		check("portal pads have a sea-lantern ring (" + ringBlocks + " ring blocks)", ringOk && ringBlocks >= 8);
 
 		// ---- Poolrooms dimension: existence, plan and real generation ----
 		ServerLevel pool = server.getLevel(net.backrooms.ModWorldgen.POOLROOMS_LEVEL);
@@ -409,7 +420,11 @@ public final class SelfTest {
 		if (pool == null) {
 			return;
 		}
-		net.backrooms.worldgen.PoolroomsLayout pl = new net.backrooms.worldgen.PoolroomsLayout(pool.getSeed());
+		check("poolrooms generator captured the worldgen seed",
+				pool.getChunkSource().getGenerator() instanceof net.backrooms.worldgen.PoolroomsChunkGenerator pg
+						&& pg.getLayoutSeed() == net.backrooms.worldgen.LevelSeeds.of(pool));
+		net.backrooms.worldgen.PoolroomsLayout pl =
+				new net.backrooms.worldgen.PoolroomsLayout(net.backrooms.worldgen.LevelSeeds.of(pool));
 
 		// pure plan: connectivity flood fill (water basins are only 1 deep - passable)
 		int pr = 150;

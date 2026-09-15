@@ -578,18 +578,30 @@ public final class Level0Layout {
 		if (Math.floorMod(hash(77, chunkX, chunkZ), POOL_PAD_CHUNK_MOD) != 0) {
 			return NO_POS;
 		}
-		int lx = 3 + (int) Math.floorMod(hash(78, chunkX, chunkZ), 10);
-		int lz = 3 + (int) Math.floorMod(hash(79, chunkX, chunkZ), 10);
-		int cx = chunkX * 16 + lx;
-		int cz = chunkZ * 16 + lz;
-		for (int dx = -PAD_RADIUS; dx <= PAD_RADIUS; dx++) {
-			for (int dz = -PAD_RADIUS; dz <= PAD_RADIUS; dz++) {
-				if (isWallColumn(cx + dx, cz + dz)) {
-					return NO_POS;
+		// Several deterministic candidates per gated chunk keep pads reliable:
+		// accept the first whose full 3x3 footprint lies clear of walls.
+		long stream = hash(78, chunkX, chunkZ) | 1L;
+		for (int attempt = 0; attempt < 8; attempt++) {
+			stream = stream * 0x5851F42D4C957F2DL + 0x14057B7EF767814FL;
+			int lx = 3 + (int) ((stream >>> 33) % 10);
+			stream = stream * 0x5851F42D4C957F2DL + 0x14057B7EF767814FL;
+			int lz = 3 + (int) ((stream >>> 33) % 10);
+			int cx = chunkX * 16 + lx;
+			int cz = chunkZ * 16 + lz;
+			boolean clear = true;
+			for (int dx = -PAD_RADIUS; dx <= PAD_RADIUS && clear; dx++) {
+				for (int dz = -PAD_RADIUS; dz <= PAD_RADIUS; dz++) {
+					if (isWallColumn(cx + dx, cz + dz)) {
+						clear = false;
+						break;
+					}
 				}
 			}
+			if (clear) {
+				return net.minecraft.core.BlockPos.asLong(cx, FLOOR_Y, cz);
+			}
 		}
-		return net.minecraft.core.BlockPos.asLong(cx, FLOOR_Y, cz);
+		return NO_POS;
 	}
 
 	/** True for every column covered by an entrance pad (this or a neighbour chunk). */

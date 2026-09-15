@@ -67,6 +67,11 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 		return new Level0Layout(this.levelSeed);
 	}
 
+	/** The worldgen seed captured in {@link #createState} (self-test/debug). */
+	public long getLayoutSeed() {
+		return this.levelSeed;
+	}
+
 	@Override
 	public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState random, ChunkAccess chunk) {
 	}

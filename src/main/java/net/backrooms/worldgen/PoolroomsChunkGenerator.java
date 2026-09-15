@@ -61,6 +61,11 @@ public class PoolroomsChunkGenerator extends ChunkGenerator {
 		return new PoolroomsLayout(this.levelSeed);
 	}
 
+	/** The worldgen seed captured in {@link #createState} (self-test/debug). */
+	public long getLayoutSeed() {
+		return this.levelSeed;
+	}
+
 	@Override
 	public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState random, ChunkAccess chunk) {
 	}
