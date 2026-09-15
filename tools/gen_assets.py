@@ -215,10 +215,7 @@ w("data/backrooms/dimension_type/poolrooms.json", {
     "infiniburn": "#minecraft:infiniburn_overworld",
     "min_y": 0,
     "height": 256,
-    "monster_spawn_light_level": {
-        "type": "minecraft:uniform",
-        "value": {"min_inclusive": 0, "max_inclusive": 7},
-    },
+    "monster_spawn_light_level": 0,
     "monster_spawn_block_light_limit": 0,
 })
 
