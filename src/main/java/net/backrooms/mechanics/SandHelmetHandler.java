@@ -47,6 +47,18 @@ public final class SandHelmetHandler {
 		return stack.is(Items.SAND);
 	}
 
+	/**
+	 * Sand-on-head entry only fires from OUTSIDE the Backrooms (e.g. the
+	 * Overworld). It must never fire from Level 0 OR another Backrooms level
+	 * such as the Poolrooms - otherwise stepping through a Pool Portal with
+	 * sand still on the head (always the case in creative, where it isn't
+	 * consumed) would yank the player straight back to Level 0.
+	 */
+	public static boolean isOutsideBackrooms(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension) {
+		return !dimension.equals(ModWorldgen.BACKROOMS_LEVEL)
+				&& !dimension.equals(ModWorldgen.POOLROOMS_LEVEL);
+	}
+
 	/** Called every server tick; performs the teleport when sand is equipped. */
 	public static void tick(MinecraftServer server) {
 		ServerLevel target = server.getLevel(ModWorldgen.BACKROOMS_LEVEL);
@@ -54,8 +66,8 @@ public final class SandHelmetHandler {
 			return;
 		}
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-			if (player.level().dimension() == ModWorldgen.BACKROOMS_LEVEL) {
-				continue; // already inside - sand on head does nothing here
+			if (!isOutsideBackrooms(player.level().dimension())) {
+				continue; // already inside a Backrooms level - sand does nothing
 			}
 			ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
 			if (isPortalSand(head)) {

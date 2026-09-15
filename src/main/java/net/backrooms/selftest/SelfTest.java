@@ -285,6 +285,17 @@ public final class SelfTest {
 		net.backrooms.mechanics.SandHelmetHandler.tick(server);
 		check("tick handler runs cleanly", true);
 
+		// Regression: sand on the head must only trigger from OUTSIDE the
+		// Backrooms - never from Level 0 or the Poolrooms (otherwise stepping
+		// through a Pool Portal immediately yanks creative players back).
+		check("sand entry armed in the Overworld",
+				net.backrooms.mechanics.SandHelmetHandler.isOutsideBackrooms(
+						net.minecraft.world.level.Level.OVERWORLD));
+		check("sand entry inert inside Level 0",
+				!net.backrooms.mechanics.SandHelmetHandler.isOutsideBackrooms(ModWorldgen.BACKROOMS_LEVEL));
+		check("sand entry inert inside the Poolrooms",
+				!net.backrooms.mechanics.SandHelmetHandler.isOutsideBackrooms(ModWorldgen.POOLROOMS_LEVEL));
+
 		runV103Checks(server);
 	}
 

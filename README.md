@@ -117,8 +117,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.3.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.3-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.4.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.4-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -137,7 +137,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.3.jar`** in `mods/`.
+3. Put **`backrooms-1.0.4.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -291,7 +291,7 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.3.jar`.
+  download `backrooms-1.0.4.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
