@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=true": {
+      "model": "backrooms:block/fluorescent"
+    },
+    "lit=false": {
+      "model": "backrooms:block/fluorescent_off"
+    }
+  }
+}

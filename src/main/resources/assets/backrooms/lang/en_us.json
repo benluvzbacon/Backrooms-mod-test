@@ -1,0 +1,21 @@
+{
+  "block.backrooms.wallpaper": "Yellow Wallpaper",
+  "block.backrooms.wallpaper_damp": "Damp Wallpaper",
+  "block.backrooms.carpet": "Old Carpet",
+  "block.backrooms.ceiling_tile": "Acoustic Ceiling Tile",
+  "block.backrooms.foundation": "Foundation Slab",
+  "block.backrooms.fluorescent": "Fluorescent Fixture",
+  "block.backrooms.pool_tile": "Pool Tile",
+  "block.backrooms.pool_portal": "Pool Portal",
+  "item.backrooms.almond_water": "Almond Water",
+  "item.backrooms.still_life_spawn_egg": "Still Life Spawn Egg",
+  "entity.backrooms.still_life": "Still Life",
+  "subtitles.backrooms.still_life.ambient": "A statue creaks",
+  "message.backrooms.enter": "The Backrooms",
+  "message.backrooms.enter.subtitle": "You noclip out of reality...",
+  "message.backrooms.enter.return.subtitle": "The water spits you back out...",
+  "message.backrooms.enter.poolrooms": "The Poolrooms",
+  "message.backrooms.enter.poolrooms.subtitle": "Warm tiles and endless water...",
+  "message.backrooms.hot_water": "The water is boiling hot!",
+  "message.backrooms.equipped": "Sand placed on your head..."
+}

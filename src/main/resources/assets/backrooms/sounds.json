@@ -1,0 +1,36 @@
+{
+  "still_life.ambient": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:still_life/ambient"
+      }
+    ]
+  },
+  "still_life.hurt": {
+    "category": "hostile",
+    "sounds": [
+      {
+       
+        "name": "backrooms:still_life/hurt"
+      }
+    ]
+  },
+  "still_life.death": {
+    "category": "hostile",
+    "sounds": [
+      {
+        "name": "backrooms:still_life/death"
+      }
+    ]
+  },
+  "ambient.hum": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "backrooms:ambient/hum",
+        "stream": true
+      }
+    ]
+  }
+}

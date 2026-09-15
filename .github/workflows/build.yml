@@ -1,0 +1,154 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the mod jar
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Build
+        run: ./gradlew build --stacktrace --no-daemon --console=plain
+
+      - name: Verify remapped mod jar contents
+        run: |
+          set -e
+          JAR=$(ls build/libs/backrooms-*.jar | grep -v -- '-sources.jar' | head -1)
+          echo "Inspecting $JAR"
+          unzip -l "$JAR" > /tmp/jarlist.txt
+          for entry in \
+            "fabric.mod.json" \
+            "net/backrooms/Backrooms.class" \
+            "net/backrooms/worldgen/BackroomsChunkGenerator.class" \
+            "net/backrooms/worldgen/PoolroomsChunkGenerator.class" \
+            "net/backrooms/mixin/LevelMixin.class" \
+            "net/backrooms/client/mixin/ClientLevelMixin.class" \
+            "net/backrooms/item/AlmondWaterItem.class" \
+            "net/backrooms/entity/StillLifeEntity.class" \
+            "net/backrooms/entity/StillLifeHuntGoal.class" \
+            "net/backrooms/client/StillLifeRenderer.class" \
+            "backrooms.mixins.json" \
+            "backrooms.client.mixins.json" \
+            "data/backrooms/dimension/backrooms.json" \
+            "data/backrooms/dimension/poolrooms.json" \
+            "data/backrooms/dimension_type/poolrooms.json" \
+            "data/backrooms/worldgen/biome/backrooms.json" \
+            "data/backrooms/worldgen/biome/poolrooms.json" \
+            "data/backrooms/loot_table/chests/supply.json" \
+            "assets/backrooms/textures/item/almond_water.png" \
+            "assets/backrooms/icon.png" \
+            "assets/backrooms/textures/entity/still_life.png" \
+            "assets/backrooms/sounds/still_life/ambient.ogg" \
+            "assets/backrooms/sounds/ambient/hum.ogg"; do
+            if ! grep -q "$entry" /tmp/jarlist.txt; then
+              echo "::error title=jar contents::missing $entry in $JAR"
+              exit 1
+            fi
+          done
+          echo "All expected entries present in $JAR"
+
+      - name: Upload mod jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: backrooms-mod
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+  selftest:
+    name: Headless in-engine self-test
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Accept EULA
+        run: mkdir -p run && printf 'eula=true\n' > run/eula.txt
+
+      - name: Run self-test
+        id: selftest
+        timeout-minutes: 10
+        run: |
+          chmod +x ./gradlew
+          # Dedicated servers wait harmlessly on stdin EOF; the self-test exits
+          # the JVM itself with code 0 (all checks passed) or 1 (failure).
+          ./gradlew runServer -Pselftest --no-daemon --console=plain < /dev/null
+
+      - name: Publish self-test report
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          python3 - <<'PY'
+          import os
+          paths = ['run/selftest-report.txt', '/tmp/backrooms-selftest.txt']
+          body = None
+          for p in paths:
+              if os.path.exists(p):
+                  body = open(p, errors='replace').read()
+                  break
+          if body is None:
+              log = ''
+              if os.path.exists('run/logs/latest.log'):
+                  log = open('run/logs/latest.log', errors='replace').read()
+              body = 'SELFTEST DID NOT COMPLETE\n----- server log tail -----\n' + log[-6000:]
+          ok = body.startswith('SELFTEST OK')
+          open('/tmp/selftest-ok', 'w').write('1' if ok else '0')
+          # Surface failures first: FAIL lines, unexpected exceptions and the
+          # final summary, then the head of the report for context.
+          lines = body.splitlines()
+          fails = [ln for ln in lines if ln.startswith('FAIL') or 'unexpected exception' in ln]
+          stack = []
+          for i, ln in enumerate(lines):
+              if 'unexpected exception' in ln:
+                  stack = lines[i:i + 25]
+                  break
+          headline = lines[0] if lines else ''
+          key_logs = [ln for ln in lines if any(t in ln for t in
+                      ('walkable=', 'fixtures', 'chests=', 'pads', 'water=', 'v1.0.5',
+                       'seed=', 'phase'))]
+          priority = '\n'.join([headline] + fails + stack + ['--- key logs ---'] + key_logs)
+          ordered = priority + '\n\n--- full report ---\n' + body
+          chunks = [ordered[i:i + 3300] for i in range(0, len(ordered), 3300)]
+          for i, c in enumerate(chunks[:6]):
+              c = c.replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+              level = 'warning' if ok else 'error'
+              print(f"::{level} title=selftest {i}::{c}")
+          PY
+          test "$(cat /tmp/selftest-ok)" = "1"
