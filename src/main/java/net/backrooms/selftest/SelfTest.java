@@ -480,20 +480,20 @@ public final class SelfTest {
 
 		// plan variety
 		int planWater = 0;
-		int planPads = 0;
+		int poolPlanPads = 0;
 		for (int x = -120; x <= 120; x++) {
 			for (int z = -120; z <= 120; z++) {
 				if (pl.isWaterColumn(x, z)) {
 					planWater++;
 				}
 				if (pl.exitPadRoleAt(x, z) == 2) {
-					planPads++;
+					poolPlanPads++;
 				}
 			}
 		}
-		log("poolrooms plan waterColumns=" + planWater + " exitPads=" + planPads);
+		log("poolrooms plan waterColumns=" + planWater + " exitPads=" + poolPlanPads);
 		check("poolrooms plan contains water pools", planWater > 0);
-		check("poolrooms plan contains exit pads", planPads > 0);
+		check("poolrooms plan contains exit pads", poolPlanPads > 0);
 
 		// real chunk structure at scattered points
 		for (int[] pp : new int[][]{{0, 0}, {48, -48}, {-400, 300}, {2000, -1800}}) {
