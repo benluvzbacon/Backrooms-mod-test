@@ -41,8 +41,7 @@ replay_*.log
 
 # CI feedback channel (decompiled signatures, selftest logs)
 ci-out/
+
+# python tooling
 __pycache__/
 *.pyc
-run/
-build/
-.gradle/
