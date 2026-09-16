@@ -134,7 +134,7 @@ build/libs/
 ```
 
 - **`build/libs/backrooms-1.0.6.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.5-sources.jar` — sources only, not needed to play
+- `backrooms-1.0.6-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
