@@ -126,6 +126,32 @@ def ceiling(name):
 
 ceiling("ceiling_tile.png")
 
+# ---------------------------------------------------------------- foundation
+def foundation(name):
+    # dark structural concrete backing under floors / above ceilings
+    img = Image.new("RGBA", (16, 16), (58, 60, 64, 255))
+    noise_fill(img, (58, 60, 64), jitter=7, seed=59)
+    px = img.load()
+    # faint horizontal formwork lines from the concrete pour
+    for y in (5, 11):
+        for x in range(16):
+            c = px[x, y]
+            px[x, y] = (clamp(c[0] - 10), clamp(c[1] - 10), clamp(c[2] - 10), 255)
+    blotches(img, [(36, 38, 42), (78, 80, 84)], count=8, radius=(1, 3),
+             seed=60, alpha=50)
+    # darker slab edge so separate blocks read at a distance
+    edge = (38, 40, 44, 255)
+    for x in range(16):
+        px[x, 0] = edge
+        px[x, 15] = edge
+    for y in range(16):
+        px[0, y] = edge
+        px[15, y] = edge
+    save(img, name)
+
+
+foundation("foundation.png")
+
 # ---------------------------------------------------------------- fluorescent
 def fluorescent(name, lit):
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))

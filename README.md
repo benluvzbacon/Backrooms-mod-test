@@ -393,6 +393,8 @@ independent 5-minute clock (60+ assertions in total).
   belt and buckle, socketed staring eyes, weathered skin and grimy hands.
 - Poolrooms great halls (the big windowed rooms) are rarer: 3% of cells
   instead of 6%.
+- Fixed missing foundation texture (magenta-black bands visible through
+  great-hall arches); every model texture now resolves.
 
 ### v1.0.6 — bug-fix pass over v1.0.5
 
