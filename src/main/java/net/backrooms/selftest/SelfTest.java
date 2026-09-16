@@ -634,8 +634,8 @@ public final class SelfTest {
 		}
 		log("v1.0.5 great halls in 31x31 cells=" + halls + " first="
 				+ (hall == null ? "none" : hall[0] + "," + hall[1]));
-		// 6% of 961 cells expects ~58; generous bounds keep CI deterministic.
-		check("great halls generate but stay rare", halls >= 10 && halls <= 120);
+		// 3% of 961 cells expects ~29 (std ~5); generous bounds keep CI deterministic.
+		check("great halls generate but stay rare", halls >= 5 && halls <= 75);
 
 		if (hall != null) {
 			int hx = hall[0] * S;

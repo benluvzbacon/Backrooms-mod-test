@@ -9,7 +9,7 @@ package net.backrooms.worldgen;
  * pools, pillars and ceiling lamps. Perimeter walls have wide archways into
  * neighbouring cells.</p>
  *
- * <p>Roughly one cell in sixteen is instead a <b>great hall</b>: no partitions,
+ * <p>Roughly three cells in a hundred are instead <b>great halls</b>: no partitions,
  * walls twice the height ringed with a continuous band of windows, a glass
  * roof open to the real sky (so the fast day/night cycle is visible inside),
  * tall lamp pillars and dry tiled floor. They are the only rooms where the
@@ -40,7 +40,8 @@ public final class PoolroomsLayout {
 	public static final long NO_POS = Long.MIN_VALUE;
 
 	private static final float POOL_CELL_CHANCE = 0.45F;
-	private static final float GREAT_HALL_CHANCE = 0.06F;
+	/** Chance a cell is a great hall: 3%, inside the intended 1-5% band. */
+	private static final float GREAT_HALL_CHANCE = 0.03F;
 	private static final float MAZE_LOOP_CHANCE = 0.12F;
 	private static final int ARCH_WIDTH = 5;
 	private static final int GRID = 3;

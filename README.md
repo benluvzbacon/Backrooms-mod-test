@@ -72,7 +72,7 @@ around a shimmering turquoise portal block. Walk into it to enter
   a depth-first spanning tree (every room reachable), shallow still-water
   pools a single block deep, ceiling lamps and lamp pillars. Wide archways
   connect every cell.
-- Rare **great halls** — roughly one room in sixteen — have no partitions and
+- Rare **great halls** — roughly three rooms in a hundred — have no partitions and
   walls twice as tall, ringed by a band of high **windows** under a full
   **glass roof**. They are the only places in the Poolrooms where you can see
   the sky and the fast sun.
@@ -250,7 +250,7 @@ blinks all release it.
   reachable and the maze never repeats a visible 16×16 pattern. 45% of cells
   hold a shallow pool; the rest are dry decks. A tile ceiling with embedded
   sea-lantern lamps and a foundation roof close every room at y70/71.
-- About 6% of cells are **great halls**: no partitions, walls up to y85 with a
+- About 3% of cells are **great halls**: no partitions, walls up to y85 with a
   continuous glass **window band** (y78–81), four tall lamp pillars, hanging
   lanterns and a full **glass roof at y86** — the only Poolrooms columns open
   to the sky. Walls bordering a hall are tall on both sides, so the feature
@@ -391,6 +391,8 @@ independent 5-minute clock (60+ assertions in total).
   wrapping the jaw, a larger tricorn crown, flared coat-skirt panels with a
   painted sash knot and hanging ends, brass waistcoat buttons, a repositioned
   belt and buckle, socketed staring eyes, weathered skin and grimy hands.
+- Poolrooms great halls (the big windowed rooms) are rarer: 3% of cells
+  instead of 6%.
 
 ### v1.0.6 — bug-fix pass over v1.0.5
 
