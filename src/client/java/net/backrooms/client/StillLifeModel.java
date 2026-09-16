@@ -21,7 +21,8 @@ import net.minecraft.util.Mth;
  *
  * <p>Texture layout (128x128), kept in lock-step with tools/gen_textures.py:
  * head 0,0; body 0,16; arms u24/u38 v16; legs u0/u12 v40; beard 26,40;
- * hat crown 44,40; brim 44,64; shared brim-flap UV 44,92.</p>
+ * hat crown 44,40; brim 44,64; shared brim-flap UV 44,92; coat skirts
+ * front 0,62, back 16,62, sides (shared) 0,72.</p>
  *
  * <p>Like vanilla bipeds, parts are authored in model space where the renderer
  * lifts the root ~24px, so the soles of the feet sit at model-Y 24 and the
@@ -57,10 +58,28 @@ public class StillLifeModel extends HierarchicalModel<StillLifeEntity> {
 
 		// Yellow vest / tunic. Every part sits 8px higher than its raw box so the
 		// feet land on model-Y 24 (see class javadoc).
-		root.addOrReplaceChild("body",
+		PartDefinition body = root.addOrReplaceChild("body",
 				CubeListBuilder.create().texOffs(0, 16)
 						.addBox(-3.0F, 0.0F, -2.0F, 6.0F, 18.0F, 4.0F, new CubeDeformation(0.0F)),
 				PartPose.offset(0.0F, -8.0F, 0.0F));
+
+		// Flared coat skirts around the waist, tilted slightly outward.
+		body.addOrReplaceChild("skirt_front",
+				CubeListBuilder.create().texOffs(0, 62)
+						.addBox(-3.0F, 0.0F, -1.0F, 6.0F, 8.0F, 1.0F, new CubeDeformation(0.0F)),
+				PartPose.offsetAndRotation(0.0F, 12.0F, -2.0F, -0.15F, 0.0F, 0.0F));
+		body.addOrReplaceChild("skirt_back",
+				CubeListBuilder.create().texOffs(16, 62)
+						.addBox(-3.0F, 0.0F, 0.0F, 6.0F, 8.0F, 1.0F, new CubeDeformation(0.0F)),
+				PartPose.offsetAndRotation(0.0F, 12.0F, 2.0F, 0.15F, 0.0F, 0.0F));
+		body.addOrReplaceChild("skirt_left",
+				CubeListBuilder.create().texOffs(0, 72)
+						.addBox(-1.0F, 0.0F, -2.0F, 1.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)),
+				PartPose.offsetAndRotation(-3.0F, 12.0F, 0.0F, 0.0F, 0.0F, 0.15F));
+		body.addOrReplaceChild("skirt_right",
+				CubeListBuilder.create().texOffs(0, 72)
+						.addBox(0.0F, 0.0F, -2.0F, 1.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)),
+				PartPose.offsetAndRotation(3.0F, 12.0F, 0.0F, 0.0F, 0.0F, -0.15F));
 
 		// Slightly oversized head so the stare reads down a hallway.
 		PartDefinition head = root.addOrReplaceChild("head",
@@ -87,16 +106,16 @@ public class StillLifeModel extends HierarchicalModel<StillLifeEntity> {
 						.addBox(-1.5F, 0.0F, -1.5F, 3.0F, 14.0F, 3.0F, new CubeDeformation(0.0F)),
 				PartPose.offset(1.5F, 10.0F, 0.0F));
 
-		// Black beard slab covering the chin.
+		// Big black beard wrapping the jaw and chin; the mouth hides inside it.
 		head.addOrReplaceChild("beard",
 				CubeListBuilder.create().texOffs(26, 40)
-						.addBox(-3.5F, -5.0F, -4.6F, 7.0F, 4.0F, 1.0F, new CubeDeformation(0.0F)),
+						.addBox(-3.5F, -5.0F, -5.0F, 7.0F, 5.0F, 2.0F, new CubeDeformation(0.0F)),
 				PartPose.ZERO);
 
 		// Tricorn: crown, wide flat brim and three upturned flaps.
 		head.addOrReplaceChild("hat_crown",
 				CubeListBuilder.create().texOffs(44, 40)
-						.addBox(-3.0F, -13.0F, -3.0F, 6.0F, 5.0F, 6.0F, new CubeDeformation(0.0F)),
+						.addBox(-3.5F, -14.0F, -3.5F, 7.0F, 6.0F, 7.0F, new CubeDeformation(0.0F)),
 				PartPose.ZERO);
 		head.addOrReplaceChild("hat_brim",
 				CubeListBuilder.create().texOffs(44, 64)

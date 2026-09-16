@@ -289,81 +289,113 @@ def still_life_texture():
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    SKIN = (176, 170, 156)      # pale wooden-mannequin skin
+    SKIN = (172, 164, 148)      # pale weathered-mannequin skin
+    SOCKET = (58, 50, 42)       # sunken eye sockets
+    BROW = (48, 40, 32)         # heavy carved brows
+    EYE_WHITE = (232, 230, 220)
+    PUPIL = (26, 22, 18)
     TEAL = (127, 182, 164)      # long sleeves
-    VEST = (202, 184, 92)       # yellow vest / tunic
+    CUFF = (96, 146, 130)
+    HAND = (148, 132, 108)      # grimy gnarled hands
+    GRIME = (92, 80, 60)
+    VEST = (202, 184, 92)       # yellow waistcoat
+    COAT = (178, 158, 74)       # darker coat-skirt fabric
+    COAT_SHADE = (150, 132, 60)
+    TRIM = (214, 175, 64)       # gold trim / buttons
+    TRIM_SHADE = (150, 118, 40)
     BLOOD = (106, 26, 24)       # dried blood streaks
     BELT = (24, 22, 20)
-    GOLD = (214, 175, 64)
-    SASH = (122, 126, 134)      # grey sash
+    SASH = (130, 122, 142)      # grey-lavender waist sash
+    SASH_SHADE = (96, 90, 108)
+    SHIRT = (202, 196, 180)
+    SHADOW = (140, 126, 66)     # under-beard neck shadow
     TROUSERS = (44, 47, 56)
     BOOT = (26, 26, 30)
     HAT = (30, 26, 20)
     HAT_TRIM = (52, 44, 32)
     BEARD = (22, 20, 18)
+    BEARD_GREY = (86, 82, 76)
 
-    # ---- head 8x8x8 at (0,0)
+    # ---- head 8x8x8 at (0,0), weathered all over
     for name, rect in sl_faces(0, 0, 8, 8, 8).items():
-        sl_paint_rect(img, rect, SKIN, 7, 1000 + zlib.crc32(name.encode()) % 900)
-    # face features on the FRONT rect (8..16, 8..16): wide staring eyes
+        sl_paint_rect(img, rect, SKIN, 7, 1000 + zlib.crc32(name.encode()) % 900,
+                      blotch=([(120, 110, 94), (102, 90, 70)], 8, (1, 2), 40, 1050))
+    # The stare (FRONT rect 8..16, 8..16): dark sunken sockets, wide whites,
+    # small pupils, heavy brows. The beard covers rows fy+3..fy+7.
     fx, fy = 8, 8
-    for ex in (fx + 1, fx + 5):  # two eye whites
-        d.rectangle([ex, fy + 2, ex + 2, fy + 3], fill=(238, 236, 228))
-        d.point((ex + 1, fy + 3), fill=(28, 24, 20))  # pupil
-    # dark carved brows
-    d.line([fx + 1, fy + 1, fx + 3, fy + 1], fill=(60, 52, 44))
-    d.line([fx + 4, fy + 1, fx + 6, fy + 1], fill=(60, 52, 44))
+    d.rectangle([fx + 0, fy + 1, fx + 3, fy + 2], fill=SOCKET)
+    d.rectangle([fx + 4, fy + 1, fx + 7, fy + 2], fill=SOCKET)
+    d.rectangle([fx + 1, fy + 1, fx + 2, fy + 2], fill=EYE_WHITE)
+    d.rectangle([fx + 5, fy + 1, fx + 6, fy + 2], fill=EYE_WHITE)
+    d.point((fx + 2, fy + 2), fill=PUPIL)
+    d.point((fx + 5, fy + 2), fill=PUPIL)
+    d.line([fx + 0, fy + 0, fx + 3, fy + 0], fill=BROW)
+    d.line([fx + 4, fy + 0, fx + 7, fy + 0], fill=BROW)
     # a thin carved mouth line (the beard hides most of it)
     d.line([fx + 2, fy + 6, fx + 5, fy + 6], fill=(96, 84, 70))
 
-    # ---- body 6x18x4 at (0,16): yellow vest
+    # ---- body 6x18x4 at (0,16): yellow waistcoat
     body = sl_faces(0, 16, 6, 18, 4)
     for name, rect in body.items():
         sl_paint_rect(img, rect, VEST, 9, 1100 + zlib.crc32(name.encode()) % 900,
                       blotch=([(158, 140, 64)], 10, (1, 3), 45, 1190))
-    # dried-blood streaks running down the vest (front + back)
+    # dried-blood streaks running down the front (and back)
     for face_name, seed_off in (("front", 0), ("back", 50)):
         x0, y0, w, h = body[face_name]
         br = random.Random(1200 + seed_off)
         for _ in range(7):
             sx = x0 + br.randint(0, w - 1)
             sy = y0 + br.randint(0, 4)
-            length = br.randint(3, 11)
+            length = br.randint(3, 9)
             for t in range(length):
                 xx = sx + (1 if br.random() < 0.3 else 0)
                 yy = sy + t
-                if 0 <= xx < S and 0 <= yy < y0 + h:
+                if x0 <= xx < x0 + w and y0 <= yy < y0 + h:
                     img.putpixel((xx, yy), (*BLOOD, 255))
 
-    # grey sash diagonally across the front (shoulder to opposite hip)
+    # shirt collar + under-beard shadow at the neck (front face rows 0..2)
     fx0, fy0, fw, fh = body["front"]
-    for t in range(fh):
-        xx = fx0 + fw - 1 - int(t * (fw - 1) / max(1, fh - 1))
-        for wdt in range(2):
-            img.putpixel((xx + wdt, fy0 + t), (*SASH, 255))
-    # black belt around the waist (all four sides) + gold buckle on front
+    for xx in range(fx0, fx0 + fw):
+        img.putpixel((xx, fy0), (*SHADOW, 255))
+    for xx in range(fx0 + 1, fx0 + 5):
+        img.putpixel((xx, fy0 + 1), (*SHIRT, 255))
+    for xx in (fx0 + 2, fx0 + 3):
+        img.putpixel((xx, fy0 + 2), (*SHIRT, 255))
+    # brass buttons down the waistcoat front (bright + shaded halves)
+    for by in (fy0 + 3, fy0 + 5, fy0 + 7):
+        img.putpixel((fx0 + 2, by), (*TRIM, 255))
+        img.putpixel((fx0 + 3, by), (*TRIM_SHADE, 255))
+    # black belt around the waist (all four sides) + gold buckle on front.
+    # Rows 12+ hide behind the coat skirts, so the belt sits at rows 9..11.
     for face_name in ("front", "back", "left", "right"):
         x0, y0, w, h = body[face_name]
-        for yy in range(y0 + 11, y0 + 14):
+        for yy in range(y0 + 9, y0 + 12):
             for xx in range(x0, x0 + w):
                 img.putpixel((xx, yy), (*BELT, 255))
-    bx0, by0, bw, bh = body["front"]
-    for xx in range(bx0 + bw // 2 - 1, bx0 + bw // 2 + 2):
-        for yy in range(by0 + 11, by0 + 14):
-            img.putpixel((xx, yy), (*GOLD, 255))
+    for xx in range(fx0 + 1, fx0 + 5):
+        for yy in range(fy0 + 9, fy0 + 12):
+            img.putpixel((xx, yy), (*TRIM, 255))
+    for xx in (fx0 + 2, fx0 + 3):
+        img.putpixel((xx, fy0 + 10), (*BELT, 255))  # buckle opening
 
-    # ---- arms 3x18x3: teal sleeves, skin hands at the cuffs
+    # ---- arms 3x18x3: teal sleeves, grimy hands at the cuffs
     for au in (24, 38):
         arms = sl_faces(au, 16, 3, 18, 3)
         for name, rect in arms.items():
             sl_paint_rect(img, rect, TEAL, 8, 1300 + au + zlib.crc32(name.encode()) % 900)
-        # darker cuff band and skin hand on the bottom two rows of each face
+        # darker cuff band and grimy hands on the bottom rows of each face
         for name in ("front", "back", "left", "right"):
             x0, y0, w, h = arms[name]
             for xx in range(x0, x0 + w):
-                img.putpixel((xx, y0 + h - 5), (96, 146, 130, 255))
+                img.putpixel((xx, y0 + h - 5), (*CUFF, 255))
                 for yy in range(y0 + h - 2, y0 + h):
-                    img.putpixel((xx, yy), (*SKIN, 255))
+                    img.putpixel((xx, yy), (*HAND, 255))
+        gr = random.Random(1350 + au)
+        for name in ("front", "back", "left", "right"):
+            x0, y0, w, h = arms[name]
+            for _ in range(6):
+                img.putpixel((x0 + gr.randint(0, w - 1), y0 + h - 1 - gr.randint(0, 1)),
+                             (*GRIME, 255))
 
     # ---- legs 3x14x3: dark trousers with black boots
     for lu in (0, 12):
@@ -376,19 +408,74 @@ def still_life_texture():
                 for xx in range(x0, x0 + w):
                     img.putpixel((xx, yy), (*BOOT, 255))
 
-    # ---- beard 7x4x1 at (26,40): black beard slab on the chin
-    beard = sl_faces(26, 40, 7, 4, 1)
+    # ---- beard 7x5x2 at (26,40): big black beard on jaw and chin
+    beard = sl_faces(26, 40, 7, 5, 2)
     for name, rect in beard.items():
         sl_paint_rect(img, rect, BEARD, 6, 1500 + zlib.crc32(name.encode()) % 900)
-    # a few grey hairs / texture
+    # long grey-streaked strands + stray hairs on the front
     bx, by, bw, bh = beard["front"]
     br = random.Random(1550)
-    for _ in range(14):
+    for _ in range(7):
+        sx = bx + br.randint(0, bw - 1)
+        for yy in range(by, by + bh):
+            if br.random() < 0.85:
+                img.putpixel((sx, yy), (*BEARD_GREY, 255))
+    for _ in range(16):
         img.putpixel((bx + br.randint(0, bw - 1), by + br.randint(0, bh - 1)),
                      (70, 66, 60, 255))
 
-    # ---- tricorn hat: crown 6x5x6 at (44,40)
-    crown = sl_faces(44, 40, 6, 5, 6)
+    # ---- coat skirts: front 6x8x1 at (0,62), back at (16,62), sides 1x8x4 at (0,72)
+    skirt_f = sl_faces(0, 62, 6, 8, 1)
+    for name, rect in skirt_f.items():
+        sl_paint_rect(img, rect, COAT, 7, 1900 + zlib.crc32(name.encode()) % 900)
+    kx0, ky0, kw, kh = skirt_f["front"]
+    # pocket flaps with gold trim under the belt line
+    for px in (kx0, kx0 + kw - 2):
+        for xx in range(px, px + 2):
+            img.putpixel((xx, ky0), (*COAT_SHADE, 255))
+            img.putpixel((xx, ky0 + 1), (*TRIM, 255))
+    # fold shading at the panel edges
+    for yy in range(ky0, ky0 + kh):
+        img.putpixel((kx0, yy), (*COAT_SHADE, 255))
+        img.putpixel((kx0 + kw - 1, yy), (*COAT_SHADE, 255))
+    # sash knot + hanging ends over the coat front
+    for xx in range(kx0 + 2, kx0 + 4):
+        for yy in range(ky0 + 2, ky0 + 4):
+            img.putpixel((xx, yy), (*SASH, 255))
+    img.putpixel((kx0 + 2, ky0 + 2), (*SASH_SHADE, 255))
+    img.putpixel((kx0 + 3, ky0 + 3), (*SASH_SHADE, 255))
+    for yy in range(ky0 + 4, ky0 + 7):
+        for xx in range(kx0 + 2, kx0 + 4):
+            img.putpixel((xx, yy), (*SASH, 255))
+        img.putpixel((kx0 + 3, yy), (*SASH_SHADE, 255))
+    img.putpixel((kx0 + 2, ky0 + 6), (*SASH_SHADE, 255))
+    for xx in range(kx0, kx0 + kw):  # gold hem
+        img.putpixel((xx, ky0 + kh - 1), (*TRIM, 255))
+
+    skirt_b = sl_faces(16, 62, 6, 8, 1)
+    for name, rect in skirt_b.items():
+        sl_paint_rect(img, rect, COAT, 7, 1950 + zlib.crc32(name.encode()) % 900)
+    qx0, qy0, qw, qh = skirt_b["back"]
+    for yy in range(qy0, qy0 + qh - 1):  # centre pleat shading
+        img.putpixel((qx0 + qw // 2, yy), (*COAT_SHADE, 255))
+    for xx in range(qx0, qx0 + qw):  # gold hem
+        img.putpixel((xx, qy0 + qh - 1), (*TRIM, 255))
+
+    skirt_s = sl_faces(0, 72, 1, 8, 4)
+    for name, rect in skirt_s.items():
+        sl_paint_rect(img, rect, COAT, 7, 1980 + zlib.crc32(name.encode()) % 900)
+    # sash wrap band + gold hem on every tall face (shared by both side panels)
+    for name in ("front", "back", "left", "right"):
+        x0, y0, w, h = skirt_s[name]
+        for yy in range(y0 + 1, y0 + 4):
+            for xx in range(x0, x0 + w):
+                img.putpixel((xx, yy), (*SASH, 255))
+        for xx in range(x0, x0 + w):
+            img.putpixel((xx, y0 + 3), (*SASH_SHADE, 255))
+            img.putpixel((xx, y0 + h - 1), (*TRIM, 255))
+
+    # ---- tricorn hat: crown 7x6x7 at (44,40)
+    crown = sl_faces(44, 40, 7, 6, 7)
     for name, rect in crown.items():
         sl_paint_rect(img, rect, HAT, 5, 1600 + zlib.crc32(name.encode()) % 900)
     # wide flat brim 13x1x13 at (44,64)

@@ -133,8 +133,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.6.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.6-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.7.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.7-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -153,7 +153,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.6.jar`** in `mods/`.
+3. Put **`backrooms-1.0.7.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -321,7 +321,7 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.6.jar`.
+  download `backrooms-1.0.7.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
@@ -381,7 +381,16 @@ independent 5-minute clock (60+ assertions in total).
 
 ---
 
+---
+
 ## Changelog
+
+### v1.0.7 — Still Life remodel
+
+- Remodelled the Still Life after the reference photo: a bigger beard
+  wrapping the jaw, a larger tricorn crown, flared coat-skirt panels with a
+  painted sash knot and hanging ends, brass waistcoat buttons, a repositioned
+  belt and buckle, socketed staring eyes, weathered skin and grimy hands.
 
 ### v1.0.6 — bug-fix pass over v1.0.5
 
