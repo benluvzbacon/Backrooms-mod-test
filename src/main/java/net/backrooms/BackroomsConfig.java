@@ -52,20 +52,61 @@ public final class BackroomsConfig {
 			}
 		}
 		// Accept the old bacteria* keys from pre-1.0.5 configs as fallbacks.
-		stillLifeEnabled = Boolean.parseBoolean(props.getProperty("stillLifeEnabled",
-				props.getProperty("bacteriaEnabled", String.valueOf(stillLifeEnabled))));
-		stillLifeSpawnIntervalTicks = Integer.parseInt(props.getProperty("stillLifeSpawnIntervalTicks",
-				props.getProperty("bacteriaSpawnIntervalTicks", String.valueOf(stillLifeSpawnIntervalTicks))));
-		stillLifeSpawnChance = Double.parseDouble(props.getProperty("stillLifeSpawnChance",
-				props.getProperty("bacteriaSpawnChance", String.valueOf(stillLifeSpawnChance))));
-		stillLifeMaxNearPlayer = Integer.parseInt(props.getProperty("stillLifeMaxNearPlayer",
-				props.getProperty("bacteriaMaxNearPlayer", String.valueOf(stillLifeMaxNearPlayer))));
-		stillLifeMinSpawnDistance = Integer.parseInt(props.getProperty("stillLifeMinSpawnDistance",
-				props.getProperty("bacteriaMinSpawnDistance", String.valueOf(stillLifeMinSpawnDistance))));
-		stillLifeMaxSpawnDistance = Integer.parseInt(props.getProperty("stillLifeMaxSpawnDistance",
-				props.getProperty("bacteriaMaxSpawnDistance", String.valueOf(stillLifeMaxSpawnDistance))));
-		normalSandOnly = Boolean.parseBoolean(props.getProperty("normalSandOnly", String.valueOf(normalSandOnly)));
+		// Values are parsed leniently: a hand-edited typo falls back to the
+		// default (with a warning) instead of crashing the server on startup.
+		stillLifeEnabled = parseBoolean(props, "stillLifeEnabled", "bacteriaEnabled", stillLifeEnabled);
+		stillLifeSpawnIntervalTicks = parseInt(props, "stillLifeSpawnIntervalTicks",
+				"bacteriaSpawnIntervalTicks", stillLifeSpawnIntervalTicks);
+		stillLifeSpawnChance = parseDouble(props, "stillLifeSpawnChance",
+				"bacteriaSpawnChance", stillLifeSpawnChance);
+		stillLifeMaxNearPlayer = parseInt(props, "stillLifeMaxNearPlayer",
+				"bacteriaMaxNearPlayer", stillLifeMaxNearPlayer);
+		stillLifeMinSpawnDistance = parseInt(props, "stillLifeMinSpawnDistance",
+				"bacteriaMinSpawnDistance", stillLifeMinSpawnDistance);
+		stillLifeMaxSpawnDistance = parseInt(props, "stillLifeMaxSpawnDistance",
+				"bacteriaMaxSpawnDistance", stillLifeMaxSpawnDistance);
+		normalSandOnly = parseBoolean(props, "normalSandOnly", null, normalSandOnly);
 		save();
+	}
+
+	private static String rawValue(Properties props, String key, String legacyKey, String fallback) {
+		String value = props.getProperty(key);
+		if (value == null && legacyKey != null) {
+			value = props.getProperty(legacyKey);
+		}
+		return value != null ? value : fallback;
+	}
+
+	private static boolean parseBoolean(Properties props, String key, String legacyKey, boolean fallback) {
+		String value = rawValue(props, key, legacyKey, String.valueOf(fallback));
+		if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+			return Boolean.parseBoolean(value);
+		}
+		Backrooms.LOGGER.warn("[Backrooms] ignoring invalid config value {}={}, using {}",
+				key, value, fallback);
+		return fallback;
+	}
+
+	private static int parseInt(Properties props, String key, String legacyKey, int fallback) {
+		String value = rawValue(props, key, legacyKey, String.valueOf(fallback));
+		try {
+			return Integer.parseInt(value.trim());
+		} catch (NumberFormatException e) {
+			Backrooms.LOGGER.warn("[Backrooms] ignoring invalid config value {}={}, using {}",
+					key, value, fallback);
+			return fallback;
+		}
+	}
+
+	private static double parseDouble(Properties props, String key, String legacyKey, double fallback) {
+		String value = rawValue(props, key, legacyKey, String.valueOf(fallback));
+		try {
+			return Double.parseDouble(value.trim());
+		} catch (NumberFormatException e) {
+			Backrooms.LOGGER.warn("[Backrooms] ignoring invalid config value {}={}, using {}",
+					key, value, fallback);
+			return fallback;
+		}
 	}
 
 	public void save() {

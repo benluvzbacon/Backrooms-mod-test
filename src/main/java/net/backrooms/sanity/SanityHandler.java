@@ -94,11 +94,13 @@ public final class SanityHandler {
 					if (hudTick) {
 						sendHud(player, sanity, stillLifeNearby);
 					}
-				} else {
-					// Recover outside the Backrooms.
-					if (sanity < MAX) {
-						set(player, sanity + OVERWORLD_REGEN * 20.0F);
-					}
+			} else {
+				// Recover outside the Backrooms. This runs every tick, so the
+				// per-tick constant is applied as-is (no *20): full recovery
+				// takes ~4 minutes, only slightly faster than the Poolrooms.
+				if (sanity < MAX) {
+					set(player, sanity + OVERWORLD_REGEN);
+				}
 					if (effectsTick) {
 						clearEffects(player);
 					}

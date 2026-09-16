@@ -44,7 +44,11 @@ public final class SandHelmetHandler {
 	}
 
 	public static boolean isPortalSand(ItemStack stack) {
-		return stack.is(Items.SAND);
+		if (stack.is(Items.SAND)) {
+			return true;
+		}
+		// The config can also allow red sand as a portal trigger.
+		return !net.backrooms.BackroomsConfig.INSTANCE.normalSandOnly && stack.is(Items.RED_SAND);
 	}
 
 	/**
@@ -122,6 +126,9 @@ public final class SandHelmetHandler {
 		int[][] offsets = {{0, 0}, {4, 0}, {-4, 0}, {0, 4}, {0, -4}, {8, 0}, {-8, 0}, {0, 8}, {0, -8}};
 		for (int[] o : offsets) {
 			BlockPos carpet = BlockPos.containing(o[0], net.backrooms.worldgen.Level0Layout.FLOOR_Y, o[1]);
+			// The spawn chunks may not be generated yet on first entry; make
+			// sure the block states below are real instead of "air by default".
+			level.getChunk(carpet.getX() >> 4, carpet.getZ() >> 4);
 			BlockPos feet = carpet.above();
 			BlockPos head = feet.above();
 			if (level.getBlockState(carpet).is(net.backrooms.ModBlocks.CARPET)

@@ -10,6 +10,7 @@ Outputs into src/main/resources/assets/backrooms/
 import math
 import os
 import random
+import zlib
 
 from PIL import Image, ImageDraw
 
@@ -303,7 +304,7 @@ def still_life_texture():
 
     # ---- head 8x8x8 at (0,0)
     for name, rect in sl_faces(0, 0, 8, 8, 8).items():
-        sl_paint_rect(img, rect, SKIN, 7, 1000 + hash(name) % 900)
+        sl_paint_rect(img, rect, SKIN, 7, 1000 + zlib.crc32(name.encode()) % 900)
     # face features on the FRONT rect (8..16, 8..16): wide staring eyes
     fx, fy = 8, 8
     for ex in (fx + 1, fx + 5):  # two eye whites
@@ -318,7 +319,7 @@ def still_life_texture():
     # ---- body 6x18x4 at (0,16): yellow vest
     body = sl_faces(0, 16, 6, 18, 4)
     for name, rect in body.items():
-        sl_paint_rect(img, rect, VEST, 9, 1100 + hash(name) % 900,
+        sl_paint_rect(img, rect, VEST, 9, 1100 + zlib.crc32(name.encode()) % 900,
                       blotch=([(158, 140, 64)], 10, (1, 3), 45, 1190))
     # dried-blood streaks running down the vest (front + back)
     for face_name, seed_off in (("front", 0), ("back", 50)):
@@ -355,7 +356,7 @@ def still_life_texture():
     for au in (24, 38):
         arms = sl_faces(au, 16, 3, 18, 3)
         for name, rect in arms.items():
-            sl_paint_rect(img, rect, TEAL, 8, 1300 + au + hash(name) % 900)
+            sl_paint_rect(img, rect, TEAL, 8, 1300 + au + zlib.crc32(name.encode()) % 900)
         # darker cuff band and skin hand on the bottom two rows of each face
         for name in ("front", "back", "left", "right"):
             x0, y0, w, h = arms[name]
@@ -368,7 +369,7 @@ def still_life_texture():
     for lu in (0, 12):
         legs = sl_faces(lu, 40, 3, 14, 3)
         for name, rect in legs.items():
-            sl_paint_rect(img, rect, TROUSERS, 7, 1400 + lu + hash(name) % 900)
+            sl_paint_rect(img, rect, TROUSERS, 7, 1400 + lu + zlib.crc32(name.encode()) % 900)
         for name in ("front", "back", "left", "right"):
             x0, y0, w, h = legs[name]
             for yy in range(y0 + h - 3, y0 + h):
@@ -378,7 +379,7 @@ def still_life_texture():
     # ---- beard 7x4x1 at (26,40): black beard slab on the chin
     beard = sl_faces(26, 40, 7, 4, 1)
     for name, rect in beard.items():
-        sl_paint_rect(img, rect, BEARD, 6, 1500 + hash(name) % 900)
+        sl_paint_rect(img, rect, BEARD, 6, 1500 + zlib.crc32(name.encode()) % 900)
     # a few grey hairs / texture
     bx, by, bw, bh = beard["front"]
     br = random.Random(1550)
@@ -389,11 +390,11 @@ def still_life_texture():
     # ---- tricorn hat: crown 6x5x6 at (44,40)
     crown = sl_faces(44, 40, 6, 5, 6)
     for name, rect in crown.items():
-        sl_paint_rect(img, rect, HAT, 5, 1600 + hash(name) % 900)
-    # wide flat brim 13x1x13 at (0,54)
+        sl_paint_rect(img, rect, HAT, 5, 1600 + zlib.crc32(name.encode()) % 900)
+    # wide flat brim 13x1x13 at (44,64)
     brim = sl_faces(44, 64, 13, 1, 13)
     for name, rect in brim.items():
-        sl_paint_rect(img, rect, HAT, 5, 1700 + hash(name) % 900)
+        sl_paint_rect(img, rect, HAT, 5, 1700 + zlib.crc32(name.encode()) % 900)
     # lighter trim along the brim edge on the top face
     tx, ty, tw, th = brim["top"]
     for xx in range(tx, tx + tw):
@@ -402,10 +403,10 @@ def still_life_texture():
     for yy in range(ty, ty + th):
         img.putpixel((tx, yy), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
         img.putpixel((tx + tw - 1, yy), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))
-    # three upturned brim flaps 11x1x7 sharing UV at (54,54)
+    # three upturned brim flaps 11x1x7 sharing UV at (44,92)
     flap = sl_faces(44, 92, 11, 1, 7)
     for name, rect in flap.items():
-        sl_paint_rect(img, rect, HAT, 5, 1800 + hash(name) % 900)
+        sl_paint_rect(img, rect, HAT, 5, 1800 + zlib.crc32(name.encode()) % 900)
     fx2, fy2, fw2, fh2 = flap["top"]
     for xx in range(fx2, fx2 + fw2):
         img.putpixel((xx, fy2), (HAT_TRIM[0], HAT_TRIM[1], HAT_TRIM[2], 255))

@@ -21,7 +21,11 @@ import net.minecraft.util.Mth;
  *
  * <p>Texture layout (128x128), kept in lock-step with tools/gen_textures.py:
  * head 0,0; body 0,16; arms u24/u38 v16; legs u0/u12 v40; beard 26,40;
- * hat crown 44,40; brim 0,54; shared brim-flap UV 54,54.</p>
+ * hat crown 44,40; brim 44,64; shared brim-flap UV 44,92.</p>
+ *
+ * <p>Like vanilla bipeds, parts are authored in model space where the renderer
+ * lifts the root ~24px, so the soles of the feet sit at model-Y 24 and the
+ * figure stands 45px (2.8 blocks) tall atop them.</p>
  */
 public class StillLifeModel extends HierarchicalModel<StillLifeEntity> {
 	public static final ResourceLocation LAYER_ID =
@@ -51,36 +55,37 @@ public class StillLifeModel extends HierarchicalModel<StillLifeEntity> {
 		MeshDefinition mesh = new MeshDefinition();
 		PartDefinition root = mesh.getRoot();
 
-		// Yellow vest / tunic.
+		// Yellow vest / tunic. Every part sits 8px higher than its raw box so the
+		// feet land on model-Y 24 (see class javadoc).
 		root.addOrReplaceChild("body",
 				CubeListBuilder.create().texOffs(0, 16)
 						.addBox(-3.0F, 0.0F, -2.0F, 6.0F, 18.0F, 4.0F, new CubeDeformation(0.0F)),
-				PartPose.ZERO);
+				PartPose.offset(0.0F, -8.0F, 0.0F));
 
 		// Slightly oversized head so the stare reads down a hallway.
 		PartDefinition head = root.addOrReplaceChild("head",
 				CubeListBuilder.create().texOffs(0, 0)
 						.addBox(-4.0F, -8.0F, -4.0F, 8.0F, 8.0F, 8.0F, new CubeDeformation(0.0F)),
-				PartPose.ZERO);
+				PartPose.offset(0.0F, -8.0F, 0.0F));
 
 		// Teal long sleeves.
 		root.addOrReplaceChild("left_arm",
 				CubeListBuilder.create().texOffs(24, 16)
 						.addBox(-1.5F, 0.0F, -1.5F, 3.0F, 18.0F, 3.0F, new CubeDeformation(0.0F)),
-				PartPose.offset(-3.5F, 0.0F, 0.0F));
+				PartPose.offset(-3.5F, -8.0F, 0.0F));
 		root.addOrReplaceChild("right_arm",
 				CubeListBuilder.create().texOffs(38, 16)
 						.addBox(-1.5F, 0.0F, -1.5F, 3.0F, 18.0F, 3.0F, new CubeDeformation(0.0F)),
-				PartPose.offset(3.5F, 0.0F, 0.0F));
+				PartPose.offset(3.5F, -8.0F, 0.0F));
 
 		root.addOrReplaceChild("left_leg",
 				CubeListBuilder.create().texOffs(0, 40)
 						.addBox(-1.5F, 0.0F, -1.5F, 3.0F, 14.0F, 3.0F, new CubeDeformation(0.0F)),
-				PartPose.offset(-1.5F, 18.0F, 0.0F));
+				PartPose.offset(-1.5F, 10.0F, 0.0F));
 		root.addOrReplaceChild("right_leg",
 				CubeListBuilder.create().texOffs(12, 40)
 						.addBox(-1.5F, 0.0F, -1.5F, 3.0F, 14.0F, 3.0F, new CubeDeformation(0.0F)),
-				PartPose.offset(1.5F, 18.0F, 0.0F));
+				PartPose.offset(1.5F, 10.0F, 0.0F));
 
 		// Black beard slab covering the chin.
 		head.addOrReplaceChild("beard",

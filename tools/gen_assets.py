@@ -56,7 +56,7 @@ w("assets/backrooms/models/block/pool_portal.json", {
 w("assets/backrooms/models/item/pool_portal.json", {"parent": "backrooms:block/pool_portal"})
 
 # spawn egg item model
-w("assets/backrooms/models/item/bacteria_spawn_egg.json", {
+w("assets/backrooms/models/item/still_life_spawn_egg.json", {
     "parent": "minecraft:item/template_spawn_egg"
 })
 
@@ -68,21 +68,22 @@ w("assets/backrooms/models/item/almond_water.json", {
 
 # sounds.json
 w("assets/backrooms/sounds.json", {
+    "still_life.ambient": {
+        "category": "hostile",
+        "subtitle": "subtitles.backrooms.still_life.ambient",
+        "sounds": [{"name": "backrooms:still_life/ambient"}],
+    },
+    "still_life.hurt": {
+        "category": "hostile",
+        "sounds": [{"name": "backrooms:still_life/hurt"}],
+    },
+    "still_life.death": {
+        "category": "hostile",
+        "sounds": [{"name": "backrooms:still_life/death"}],
+    },
     "ambient.hum": {
         "category": "ambient",
         "sounds": [{"name": "backrooms:ambient/hum", "stream": True}],
-    },
-    "bacteria.ambient": {
-        "category": "hostile",
-        "sounds": [{"name": "backrooms:bacteria/ambient"}],
-    },
-    "bacteria.hurt": {
-        "category": "hostile",
-        "sounds": [{"name": "backrooms:bacteria/hurt"}],
-    },
-    "bacteria.death": {
-        "category": "hostile",
-        "sounds": [{"name": "backrooms:bacteria/death"}],
     },
 })
 
@@ -140,7 +141,7 @@ w("data/backrooms/worldgen/biome/backrooms.json", {
     },
     "spawners": {
         "monster": [{
-            "type": "backrooms:bacteria", "weight": 6, "minSize": 1, "maxSize": 1
+            "type": "backrooms:still_life", "weight": 6, "minSize": 1, "maxSize": 1
         }],
         "creature": [],
         "ambient": [],
@@ -274,8 +275,9 @@ w("assets/backrooms/lang/en_us.json", {
     "block.backrooms.pool_tile": "Pool Tile",
     "block.backrooms.pool_portal": "Pool Portal",
     "item.backrooms.almond_water": "Almond Water",
-    "item.backrooms.bacteria_spawn_egg": "Bacteria Spawn Egg",
-    "entity.backrooms.bacteria": "Bacteria",
+    "item.backrooms.still_life_spawn_egg": "Still Life Spawn Egg",
+    "entity.backrooms.still_life": "Still Life",
+    "subtitles.backrooms.still_life.ambient": "A statue creaks",
     "message.backrooms.enter": "The Backrooms",
     "message.backrooms.enter.subtitle": "You noclip out of reality...",
     "message.backrooms.enter.return.subtitle": "The water spits you back out...",

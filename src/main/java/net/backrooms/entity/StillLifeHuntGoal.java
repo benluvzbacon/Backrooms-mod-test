@@ -34,12 +34,16 @@ public class StillLifeHuntGoal extends Goal {
 	@Override
 	public boolean canUse() {
 		this.target = this.mob.level().getNearestPlayer(this.mob, WATCH_RANGE);
-		return this.target != null && this.target.isAlive();
+		if (this.target == null || !this.target.isAlive() || isUntargetable(this.target)) {
+			this.target = null;
+			return false;
+		}
+		return true;
 	}
 
 	@Override
 	public boolean canContinueToUse() {
-		if (this.target == null || !this.target.isAlive()) {
+		if (this.target == null || !this.target.isAlive() || isUntargetable(this.target)) {
 			return false;
 		}
 		return this.mob.distanceToSqr(this.target) < WATCH_RANGE * WATCH_RANGE * 1.5D;
@@ -49,7 +53,14 @@ public class StillLifeHuntGoal extends Goal {
 	public void stop() {
 		this.target = null;
 		this.watcher = null;
+		// Otherwise the mannequin pose would stick after the target leaves.
+		this.mob.setFrozenPose(false);
 		this.mob.getNavigation().stop();
+	}
+
+	/** Like vanilla monsters, it ignores creative and spectator players. */
+	private static boolean isUntargetable(Player player) {
+		return player.isSpectator() || player.isCreative();
 	}
 
 	@Override
@@ -84,6 +95,8 @@ public class StillLifeHuntGoal extends Goal {
 		} else {
 			this.mob.getNavigation().stop();
 			if (this.attackCooldown <= 0) {
+				// Swing first so the two-armed lunge animation actually plays.
+				this.mob.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 				this.mob.doHurtTarget(this.target);
 				this.attackCooldown = ATTACK_INTERVAL;
 			}
@@ -96,7 +109,7 @@ public class StillLifeHuntGoal extends Goal {
 	/** A player within range, roughly facing the mob with line of sight. */
 	private Player findWatcher() {
 		for (Player player : this.mob.level().players()) {
-			if (!player.isAlive() || player.isSpectator() || player.isInvisible()) {
+			if (!player.isAlive() || player.isSpectator() || player.isCreative() || player.isInvisible()) {
 				continue;
 			}
 			double distance = this.mob.distanceToSqr(player);

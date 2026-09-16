@@ -1,6 +1,7 @@
 {
   "still_life.ambient": {
     "category": "hostile",
+    "subtitle": "subtitles.backrooms.still_life.ambient",
     "sounds": [
       {
         "name": "backrooms:still_life/ambient"
@@ -11,7 +12,6 @@
     "category": "hostile",
     "sounds": [
       {
-       
         "name": "backrooms:still_life/hurt"
       }
     ]
