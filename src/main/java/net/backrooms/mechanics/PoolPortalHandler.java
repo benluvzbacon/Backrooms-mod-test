@@ -1,5 +1,6 @@
 package net.backrooms.mechanics;
 
+import net.backrooms.ModBlocks;
 import net.backrooms.ModWorldgen;
 import net.backrooms.worldgen.Level0Layout;
 import net.backrooms.worldgen.PoolroomsLayout;
