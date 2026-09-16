@@ -133,7 +133,7 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.5.jar`** ← the file to put in your `mods/` folder
+- **`build/libs/backrooms-1.0.6.jar`** ← the file to put in your `mods/` folder
 - `backrooms-1.0.5-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
@@ -153,7 +153,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.5.jar`** in `mods/`.
+3. Put **`backrooms-1.0.6.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -321,7 +321,7 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.5.jar`.
+  download `backrooms-1.0.6.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
@@ -378,3 +378,23 @@ independent 5-minute clock (60+ assertions in total).
 - Planned later: more levels and level transitions, more entities, items and
   weapons, rare/secret rooms, more loot, objectives, random events, richer
   pathfinding and multiplayer-tuned events.
+
+---
+
+## Changelog
+
+### v1.0.6 — bug-fix pass over v1.0.5
+
+- Still Life model pivots fixed — the figure rendered sunk into the floor;
+  feet now land on the ground and the 2.8-block figure matches its hitbox.
+- Overworld sanity regen fixed (was 20x/tick; now ~4 min for a full bar,
+  only slightly faster than the Poolrooms as documented).
+- `normalSandOnly=false` now actually allows red sand as the entry trigger.
+- Still Life ignores creative/spectator players, swings when it attacks, and
+  no longer gets stuck in its frozen pose.
+- Registered the Still Life's natural-spawn placement (the biome spawner
+  entry previously had no defined placement).
+- Level 0 arrival search loads chunks before reading spawn columns.
+- `tools/gen_assets.py` finished the bacteria -> Still Life migration and is
+  byte-identical with the checked-in assets again; ambient subtitle wired.
+- Config typos now warn and fall back to defaults instead of crashing startup.
