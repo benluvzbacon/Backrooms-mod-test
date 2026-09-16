@@ -153,23 +153,37 @@ public class PoolroomsChunkGenerator extends ChunkGenerator {
 		BlockState glass = Blocks.GLASS.defaultBlockState();
 		BlockState portal = ModBlocks.POOL_PORTAL.defaultBlockState();
 
-		if (y <= 62) {
+		if (y < 62) {
+			return foundation;
+		}
+		if (y == 62) {
+			// Sunken basin floor: a glowing ring around the drain.
+			if (padRole == 1) {
+				return lamp;
+			}
+			if (padRole == 2) {
+				return portal;
+			}
 			return foundation;
 		}
 		if (y == PoolroomsLayout.BASIN_FLOOR_Y) {
-			if (wall || water || padRole != 0) {
+			if (padRole != 0) {
+				return Blocks.WATER.defaultBlockState();
+			}
+			if (wall || water) {
 				return tile;
 			}
 			return foundation;
 		}
 		if (y == PoolroomsLayout.FLOOR_Y) {
-			if (padRole == 1) {
-				return lamp;
+			if (padRole != 0) {
+				// Open water with its surface flush with the surrounding floor.
+				return Blocks.WATER.defaultBlockState();
 			}
 			if (water) {
 				return Blocks.WATER.defaultBlockState();
 			}
-			return tile; // pad centre, walls, pillars, dry deck
+			return tile; // walls, pillars, dry deck
 		}
 
 		boolean perimeterOpening = layout.isPerimeterOpening(x, z);
@@ -206,21 +220,12 @@ public class PoolroomsChunkGenerator extends ChunkGenerator {
 			if (layout.hallLanternAt(x, z) && y == PoolroomsLayout.HALL_PILLAR_LAMP_Y) {
 				return lamp;
 			}
-			if (!wall && padRole == 2 && y == 65) {
-				return portal;
-			}
 			return air;
 		}
 
 		// Roofed maze rooms.
 		if (wall || (pillar && y <= 69)) {
 			return tile;
-		}
-		if (y == 65) {
-			if (padRole == 2) {
-				return portal;
-			}
-			return air;
 		}
 		if (y <= 69) {
 			return air;

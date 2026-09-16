@@ -1,10 +1,11 @@
 package net.backrooms.mechanics;
 
-import net.backrooms.ModBlocks;
 import net.backrooms.ModWorldgen;
+import net.backrooms.worldgen.Level0Layout;
 import net.backrooms.worldgen.PoolroomsLayout;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
@@ -20,10 +21,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Moves players between Level 0 and the Poolrooms when they step into a pool
- * portal block. Portals exist as rare 3x3 lamp-ringed pads in both dimensions
- * (placed by the chunk generators). A short per-player cooldown prevents
- * immediate bounce-back.
+ * Moves players between Level 0 and the Poolrooms when they dive into a sunken
+ * portal basin and submerge. Basins are 3x3 tiled pools with a glowing lantern
+ * floor and a shimmering drain at the centre (placed by the chunk generators);
+ * in Level 0 a tiled deck rings the pool.
+ *
+ * <p>There is no walk-through trigger: the transfer fires only while the
+ * player's head is underwater inside a basin. Duck under the dark water and
+ * you are pulled through with a splash of bubbles. A short per-player cooldown
+ * prevents immediate bounce-back.</p>
  */
 public final class PoolPortalHandler {
 	private static final long COOLDOWN_TICKS = 80L;
@@ -32,36 +38,69 @@ public final class PoolPortalHandler {
 	private PoolPortalHandler() {
 	}
 
-	/** Polled fallback (the block's entityInside hook is the primary trigger). */
+	/** Scans both Backrooms levels for divers a few times a second. */
 	public static void tick(MinecraftServer server) {
-		if (server.getTickCount() % 10L != 0L) {
+		if (server.getTickCount() % 5L != 0L) {
 			return;
 		}
 		ServerLevel level0 = server.getLevel(ModWorldgen.BACKROOMS_LEVEL);
-		ServerLevel poolrooms = server.getLevel(ModWorldgen.POOLROOMS_LEVEL);
 		if (level0 != null) {
+			Level0Layout layout = new Level0Layout(net.backrooms.worldgen.LevelSeeds.of(level0));
 			for (ServerPlayer player : level0.players()) {
-				if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.POOL_PORTAL)) {
+				if (isDiving(player, layout)) {
 					onPortalTouch(player);
 				}
 			}
 		}
+		ServerLevel poolrooms = server.getLevel(ModWorldgen.POOLROOMS_LEVEL);
 		if (poolrooms != null) {
+			PoolroomsLayout layout = new PoolroomsLayout(net.backrooms.worldgen.LevelSeeds.of(poolrooms));
 			for (ServerPlayer player : poolrooms.players()) {
-				if (player.level().getBlockState(player.blockPosition()).is(ModBlocks.POOL_PORTAL)) {
+				if (isDiving(player, layout)) {
 					onPortalTouch(player);
 				}
 			}
 		}
 	}
 
-	/** Called when a player intersects a portal block (or the poll above finds one). */
+	/** Head underwater with feet or eyes over a Level 0 basin column. */
+	private static boolean isDiving(ServerPlayer player, Level0Layout layout) {
+		if (player.isSpectator() || !player.isUnderWater()) {
+			return false;
+		}
+		BlockPos feet = player.blockPosition();
+		BlockPos eyes = BlockPos.containing(player.getX(), player.getEyeY(), player.getZ());
+		return layout.poolPadRoleAt(feet.getX(), feet.getZ()) != 0
+				|| layout.poolPadRoleAt(eyes.getX(), eyes.getZ()) != 0;
+	}
+
+	/** Head underwater with feet or eyes over a Poolrooms basin column. */
+	private static boolean isDiving(ServerPlayer player, PoolroomsLayout layout) {
+		if (player.isSpectator() || !player.isUnderWater()) {
+			return false;
+		}
+		BlockPos feet = player.blockPosition();
+		BlockPos eyes = BlockPos.containing(player.getX(), player.getEyeY(), player.getZ());
+		return layout.exitPadRoleAt(feet.getX(), feet.getZ()) != 0
+				|| layout.exitPadRoleAt(eyes.getX(), eyes.getZ()) != 0;
+	}
+
+	/** Called when a diver submerges in a basin (or touches a drain block). */
 	public static void onPortalTouch(ServerPlayer player) {
 		MinecraftServer server = player.getServer();
 		Long until = COOLDOWN_UNTIL.get(player.getUUID());
 		if (until != null && server.getTickCount() < until) {
 			return;
 		}
+		// The pull-through: a burst of bubbles, a splash, and a fresh breath.
+		ServerLevel origin = (ServerLevel) player.level();
+		BlockPos at = player.blockPosition();
+		origin.sendParticles(ParticleTypes.BUBBLE, at.getX() + 0.5, at.getY() + 1.0, at.getZ() + 0.5,
+				40, 0.4, 0.7, 0.4, 0.08);
+		origin.sendParticles(ParticleTypes.SPLASH, at.getX() + 0.5, at.getY() + 1.2, at.getZ() + 0.5,
+				20, 0.4, 0.3, 0.4, 0.1);
+		origin.playSound(null, at, SoundEvents.PLAYER_SPLASH, SoundSource.PLAYERS, 1.0F, 0.9F);
+		player.setAirSupply(player.getMaxAirSupply());
 		if (player.level().dimension().equals(ModWorldgen.BACKROOMS_LEVEL)) {
 			ServerLevel pool = server.getLevel(ModWorldgen.POOLROOMS_LEVEL);
 			if (pool != null) {
@@ -100,6 +139,9 @@ public final class PoolPortalHandler {
 		player.connection.send(new ClientboundSetTitleTextPacket(
 				Component.translatable(titleKey).withStyle(titleColor, ChatFormatting.BOLD)));
 		destination.playSound(null, standingOn, SoundEvents.CONDUIT_ACTIVATE, SoundSource.HOSTILE, 1.0F, 0.7F);
+		destination.playSound(null, standingOn, SoundEvents.PLAYER_SPLASH, SoundSource.PLAYERS, 0.8F, 1.0F);
+		destination.sendParticles(ParticleTypes.SPLASH, standingOn.getX() + 0.5, standingOn.getY() + 1.2,
+				standingOn.getZ() + 0.5, 24, 0.4, 0.3, 0.4, 0.1);
 	}
 
 	/** Finds dry tiled floor near the origin of the Poolrooms. */

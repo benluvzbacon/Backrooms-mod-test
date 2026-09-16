@@ -273,7 +273,7 @@ w("assets/backrooms/lang/en_us.json", {
     "block.backrooms.foundation": "Foundation Slab",
     "block.backrooms.fluorescent": "Fluorescent Fixture",
     "block.backrooms.pool_tile": "Pool Tile",
-    "block.backrooms.pool_portal": "Pool Portal",
+    "block.backrooms.pool_portal": "Sunken Portal",
     "item.backrooms.almond_water": "Almond Water",
     "item.backrooms.still_life_spawn_egg": "Still Life Spawn Egg",
     "entity.backrooms.still_life": "Still Life",

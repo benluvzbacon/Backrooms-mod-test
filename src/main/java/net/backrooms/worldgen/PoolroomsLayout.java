@@ -426,7 +426,7 @@ public final class PoolroomsLayout {
 		return NO_POS;
 	}
 
-	/** 0 = not on a pad, 1 = lamp ring, 2 = centre (portal back to Level 0). */
+	/** 0 = not on a pad, 1 = glowing basin floor ring, 2 = centre (the drain: portal back to Level 0). */
 	public int exitPadRoleAt(int x, int z) {
 		int cx = fdiv(x, 16);
 		int cz = fdiv(z, 16);

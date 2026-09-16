@@ -4,7 +4,7 @@ Put **sand on your head** and noclip into an endless, procedurally generated
 **Level 0** — yellow rooms, damp carpet, humming fluorescent lights, long
 hallways, junctions, dead ends, and the **Still Life** — a tricorn-hatted
 mannequin that only moves when you aren't looking at it — hunting you through
-it all. Find a glowing **Pool Portal** and wade into the **Poolrooms**, a
+it all. Find a glowing **Sunken Portal** basin and dive into the **Poolrooms**, a
 roofed indoor tile maze of shallow water on a fast 5-minute day/night cycle
 where your **Sanity slowly returns**, and seek out **Almond Water** in rare
 supply chests. Rare, towering **great halls** break the maze: ringed with
@@ -12,7 +12,7 @@ windows under a glass roof, they are the only rooms open to the sky. Built for
 **Minecraft Java Edition 1.21.1** with the **Fabric** mod loader.
 
 > Core loop: **sand helmet → enter the Backrooms → explore the infinite
-> procedural Level 0 → loot Almond Water → find a Pool Portal → recover your
+> procedural Level 0 → loot Almond Water → dive a Sunken Portal basin → recover your
 > Sanity in the roofed Poolrooms, and don't take your eyes off the Still
 > Life.**
 
@@ -64,9 +64,11 @@ burst, and returns the empty glass bottle. Bottles also show up in the
 
 ### The Poolrooms and the exit
 
-Some Level 0 corridors hide a 3×3 **Pool Portal pad**: a ring of sea lanterns
-around a shimmering turquoise portal block. Walk into it to enter
-`backrooms:poolrooms` — a second infinite procedural dimension:
+Some Level 0 corridors hide a sunken **Sunken Portal** basin: a 3×3 tiled
+pool with a glowing sea-lantern floor and a shimmering turquoise drain at
+the centre, ringed by a tiled deck. Dive in and **submerge** — ducking under
+the dark water pulls you through into `backrooms:poolrooms` — a second
+infinite procedural dimension:
 
 - An **indoor, fully roofed maze**: tiled partitions with doorways laid out by
   a depth-first spanning tree (every room reachable), shallow still-water
@@ -82,8 +84,9 @@ around a shimmering turquoise portal block. Walk into it to enter
 - **During the day the pool water runs hot** — swimming while the sun is up
   scalds you (2 fire damage per second) and warns you in the hotbar. The water
   is safe after dark. Plan your crossings, or move at night.
-- Matching portal pads lead **back to Level 0**. A short cooldown stops
-  instant bounce-back, and arrival always places you on dry tile.
+- Matching portal basins lead **back to Level 0**. A short cooldown stops
+  instant bounce-back, and arrival always places you on dry tile after a
+  splash of bubbles.
 
 > **Tip:** dragging sand into the helmet slot with the mouse does **not** work
 > in a survival inventory screen — vanilla refuses non-armor items there. Use
@@ -133,8 +136,8 @@ The finished, remapped mod jars appear in:
 build/libs/
 ```
 
-- **`build/libs/backrooms-1.0.7.jar`** ← the file to put in your `mods/` folder
-- `backrooms-1.0.7-sources.jar` — sources only, not needed to play
+- **`build/libs/backrooms-1.0.8.jar`** ← the file to put in your `mods/` folder
+- `backrooms-1.0.8-sources.jar` — sources only, not needed to play
 
 To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
@@ -153,7 +156,7 @@ To run a dev client/server: `./gradlew runClient` / `./gradlew runServer`.
 
 1. Install Fabric Loader for **1.21.1** (<https://fabricmc.net/use/installer/>).
 2. Download **Fabric API** for 1.21.1 and put it in `mods/`.
-3. Put **`backrooms-1.0.7.jar`** in `mods/`.
+3. Put **`backrooms-1.0.8.jar`** in `mods/`.
 4. Launch the **fabric-loader-1.21.1** profile.
 
 ---
@@ -255,8 +258,10 @@ blinks all release it.
   lanterns and a full **glass roof at y86** — the only Poolrooms columns open
   to the sky. Walls bordering a hall are tall on both sides, so the feature
   agrees across chunk and cell borders.
-- Rare 3×3 portal pads (sea-lantern ring + `pool_portal` centre) return the
-  player to Level 0; Level 0's pads enter it.
+- Rare sunken portal basins (glowing lantern floor + `pool_portal` drain under
+  two-deep water) return the player to Level 0; Level 0's basins enter it.
+  The transfer fires while the player's head is underwater inside a basin,
+  wrapped in bubbles and a splash.
 - The fast day/night phase is owned by `PoolroomsEnvironmentHandler`, because
   vanilla gives non-Overworld dimensions a read-only clock derived from the
   Overworld. Small mixins into `Level`/`ClientLevel` expose the independent
@@ -292,7 +297,7 @@ src/main/java/net/backrooms/
 ├── worldgen/
 │   ├── BackroomsChunkGenerator.java + Level0Layout.java   # Level 0
 │   ├── PoolroomsChunkGenerator.java + PoolroomsLayout.java
-│   └── block/                     # fluorescent/flicker + non-solid pool portal
+│   └── block/                     # fluorescent/flicker + non-solid portal drain
 ├── mixin/LevelMixin.java          # independent Poolrooms clock (server)
 ├── entity/StillLifeEntity.java    # attributes/sounds + StillLifeHuntGoal (freeze rule)
 └── selftest/SelfTest.java         # CI headless smoke test
@@ -321,7 +326,7 @@ Two workflows live in `.github/workflows/`:
 - **`build.yml`** — builds on every push/PR with JDK 21, fails on compile
   errors, and uploads the actual remapped jars as a workflow artifact named
   **`backrooms-mod`**. After a run, open its **Summary → Artifacts** section to
-  download `backrooms-1.0.7.jar`.
+  download `backrooms-1.0.8.jar`.
 - **`release.yml`** — pushing a version tag such as **`v1.0.0`** builds the
   jar and attaches it to a GitHub Release automatically (no secrets beyond the
   default `GITHUB_TOKEN`).
@@ -357,7 +362,8 @@ independent 5-minute clock (60+ assertions in total).
       lamps, and rare tall **great halls** ringed with windows under a glass
       roof (the only rooms open to the fast sky); dedicated biome and generator
 - [x] **Sanity regenerates while staying in the Poolrooms**
-- [x] **Pool Portal pads** in both dimensions with teleport, titles, sounds, cooldown
+- [x] **Sunken Portal basins** in both dimensions — dive, submerge, get pulled
+      through (teleport, titles, sounds, bubbles, cooldown)
 - [x] **5-minute day/night cycle** independent of the Overworld (mixin-served clock,
       smooth client sun) and **hot water that scalds swimmers during the day**
 - [x] Custom dimension types, biomes, fog/sky colours, empty sky for Level 0
@@ -384,6 +390,18 @@ independent 5-minute clock (60+ assertions in total).
 ---
 
 ## Changelog
+
+### v1.0.8 — Sunken Portal basins
+
+- Portal pads remade as immersive dive-through basins: sunken 3x3 tiled
+  pools with a glowing lantern floor, a shimmering drain, and (in Level 0)
+  a tiled deck ring. Ducking under the dark water pulls you through.
+- The dive is wrapped in feedback: bubble bursts, a splash, a fresh breath
+  of air, and a splashy arrival on dry tile. The old walk-through
+  head-height portal is gone (`pool_portal` is now the basin drain, with a
+  bubble column rising from it).
+- Self-test checks the basin structure: glowing ring, two-deep water with
+  a flush surface, deck tiles, and every planned pad building a drain.
 
 ### v1.0.7 — Still Life remodel
 

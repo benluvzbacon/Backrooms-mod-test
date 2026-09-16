@@ -134,10 +134,10 @@ public final class SelfTest {
 			BlockState under = level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y - 1, z));
 			BlockState ceil = level.getBlockState(BlockPos.containing(x, Level0Layout.CEILING_Y, z));
 			BlockState interior = level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y + 2, z));
-			boolean onPad = floor.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)
-					|| floor.is(ModBlocks.POOL_TILE);
-			boolean ok = (floor.is(ModBlocks.CARPET) || onPad)
-					&& under.is(ModBlocks.FOUNDATION)
+			boolean inBasin = floor.is(net.minecraft.world.level.block.Blocks.WATER);
+			boolean onDeck = floor.is(ModBlocks.POOL_TILE);
+			boolean ok = (floor.is(ModBlocks.CARPET) || onDeck || inBasin)
+					&& (under.is(ModBlocks.FOUNDATION) || inBasin)
 					&& (ceil.is(ModBlocks.CEILING_TILE) || ceil.is(ModBlocks.FLUORESCENT))
 					&& (interior.isAir() || interior.is(ModBlocks.WALLPAPER) || interior.is(ModBlocks.WALLPAPER_DAMP));
 			check("structure at (" + x + "," + z + ")", ok);
@@ -154,8 +154,7 @@ public final class SelfTest {
 						wall.is(ModBlocks.WALLPAPER) || wall.is(ModBlocks.WALLPAPER_DAMP));
 			} else {
 				BlockState interior1 = level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y + 1, z));
-				check("open column stays clear at (" + x + "," + z + ")",
-						interior1.isAir() || interior1.is(ModBlocks.POOL_PORTAL));
+				check("open column stays clear at (" + x + "," + z + ")", interior1.isAir());
 			}
 		}
 		log("fixtures across probes: " + fixtures);
@@ -379,6 +378,8 @@ public final class SelfTest {
 		int portalBlocks = 0;
 		int ringBlocks = 0;
 		boolean ringOk = false;
+		boolean basinWetOk = true;
+		boolean deckOk = true;
 		var chestVisitor = net.fabricmc.fabric.api.entity.FakePlayer.get(server.overworld(),
 				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "br-chest"));
 		for (int x = -8 * 16; x < 12 * 16; x++) {
@@ -398,18 +399,49 @@ public final class SelfTest {
 						}
 					}
 				}
-				if (level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y + 1, z))
+				if (level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y - 2, z))
 						.is(ModBlocks.POOL_PORTAL)) {
 					portalBlocks++;
-					boolean ring = level.getBlockState(BlockPos.containing(x + 1, Level0Layout.FLOOR_Y, z))
-							.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)
-							&& level.getBlockState(BlockPos.containing(x - 1, Level0Layout.FLOOR_Y, z))
-							.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN);
+					boolean ring = true;
+					for (int dx = -1; dx <= 1 && ring; dx++) {
+						for (int dz = -1; dz <= 1; dz++) {
+							if (dx == 0 && dz == 0) {
+								continue;
+							}
+							if (!level.getBlockState(BlockPos.containing(x + dx, Level0Layout.FLOOR_Y - 2, z + dz))
+									.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)) {
+								ring = false;
+								break;
+							}
+						}
+					}
 					if (ring) {
 						ringOk = true;
 					}
+					// Two-deep water above the drain, surface flush with the floor.
+					if (!level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y - 1, z))
+							.is(net.minecraft.world.level.block.Blocks.WATER)
+							|| !level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y, z))
+							.is(net.minecraft.world.level.block.Blocks.WATER)) {
+						basinWetOk = false;
+					}
+					// Tiled deck ring wherever it doesn't hit a wall.
+					for (int dx = -2; dx <= 2; dx++) {
+						for (int dz = -2; dz <= 2; dz++) {
+							if (Math.max(Math.abs(dx), Math.abs(dz)) != 2) {
+								continue;
+							}
+							boolean wallColumn = planLayout.isWallColumn(x + dx, z + dz);
+							boolean tiled = level.getBlockState(
+									BlockPos.containing(x + dx, Level0Layout.FLOOR_Y, z + dz))
+									.is(ModBlocks.POOL_TILE);
+							if (!wallColumn && !tiled) {
+								deckOk = false;
+							}
+						}
+					}
 				}
-				if (level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y, z))
+				if (level.getBlockState(BlockPos.containing(x, Level0Layout.FLOOR_Y - 2, z))
 						.is(net.minecraft.world.level.block.Blocks.SEA_LANTERN)) {
 					ringBlocks++;
 				}
@@ -419,12 +451,14 @@ public final class SelfTest {
 				+ " portalBlocks=" + portalBlocks + " ringBlocks=" + ringBlocks);
 		check("supply chests generate in Level 0", chests > 0);
 		check("a supply chest contained almond water", chestWithAlmondWater);
-		check("pool portal pads generate in Level 0", portalBlocks > 0);
-		// Pads stay inside their owning chunk (ring at local 2..13), so every
-		// accepted plan pad must correspond 1:1 to a portal block in world.
-		check("every planned Level 0 pad built a portal (" + planPads + " vs " + portalBlocks + ")",
+		check("portal basins generate in Level 0", portalBlocks > 0);
+		// Pads stay inside their owning chunk (basin at local 2..13), so every
+		// accepted plan pad must correspond 1:1 to a drain block in world.
+		check("every planned Level 0 pad built a drain (" + planPads + " vs " + portalBlocks + ")",
 				portalBlocks == planPads);
-		check("portal pads have a sea-lantern ring (" + ringBlocks + " ring blocks)", ringOk && ringBlocks >= 8);
+		check("basin floors have a sea-lantern ring (" + ringBlocks + " ring blocks)", ringOk && ringBlocks >= 8);
+		check("basin water is two deep with a flush surface", basinWetOk && portalBlocks > 0);
+		check("basins have a tiled deck wherever it misses walls", deckOk && portalBlocks > 0);
 
 		// ---- Poolrooms dimension: existence, plan and real generation ----
 		ServerLevel pool = server.getLevel(net.backrooms.ModWorldgen.POOLROOMS_LEVEL);
@@ -531,20 +565,26 @@ public final class SelfTest {
 		}
 		int realWater = 0;
 		int realPortal = 0;
+		int planPortal = 0;
 		for (int x = -100; x <= 100; x++) {
 			for (int z = -100; z <= 100; z++) {
 				if (pool.getBlockState(BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y, z))
 						.is(net.minecraft.world.level.block.Blocks.WATER)) {
 					realWater++;
 				}
-				if (pool.getBlockState(BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y + 1, z))
+				if (pl.exitPadRoleAt(x, z) == 2) {
+					planPortal++;
+				}
+				if (pool.getBlockState(BlockPos.containing(x, net.backrooms.worldgen.PoolroomsLayout.FLOOR_Y - 2, z))
 						.is(ModBlocks.POOL_PORTAL)) {
 					realPortal++;
 				}
 			}
 		}
-		log("poolrooms generated water=" + realWater + " portals=" + realPortal);
+		log("poolrooms generated water=" + realWater + " drains=" + realPortal + " plan=" + planPortal);
 		check("poolrooms generate real pool water", realWater > 0);
+		check("every planned Poolrooms pad built a drain (" + planPortal + " vs " + realPortal + ")",
+				realPortal == planPortal);
 
 		// arrival search lands on dry tiled floor with two air blocks above
 		BlockPos poolSpawn = net.backrooms.mechanics.PoolPortalHandler.findPoolroomsSpawn(pool);

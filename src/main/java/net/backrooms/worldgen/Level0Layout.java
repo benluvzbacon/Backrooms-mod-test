@@ -609,7 +609,7 @@ public final class Level0Layout {
 		return poolPadRoleAt(x, z) != 0;
 	}
 
-	/** 0 = not on a pad, 1 = surrounding ring, 2 = centre (portal column). */
+	/** 0 = not on a pad, 1 = glowing basin floor ring, 2 = centre (the drain: portal to the Poolrooms). */
 	public int poolPadRoleAt(int x, int z) {
 		int cx = Math.floorDiv(x, 16);
 		int cz = Math.floorDiv(z, 16);
@@ -631,8 +631,36 @@ public final class Level0Layout {
 	}
 
 	/**
+	 * The tiled deck ring around an entrance basin: columns at Chebyshev
+	 * distance exactly 2 from a pad centre. Only applies to open floor (walls
+	 * win), and like pads it never leaves its owning chunk.
+	 */
+	public boolean isPoolDeckColumn(int x, int z) {
+		if (isWallColumn(x, z) || isPoolPadColumn(x, z)) {
+			return false;
+		}
+		int cx = Math.floorDiv(x, 16);
+		int cz = Math.floorDiv(z, 16);
+		for (int dcx = -1; dcx <= 1; dcx++) {
+			for (int dcz = -1; dcz <= 1; dcz++) {
+				long center = poolPadCenter(cx + dcx, cz + dcz);
+				if (center == NO_POS) {
+					continue;
+				}
+				net.minecraft.core.BlockPos cp = net.minecraft.core.BlockPos.of(center);
+				int dx = x - cp.getX();
+				int dz = z - cp.getZ();
+				if (Math.max(Math.abs(dx), Math.abs(dz)) == 2) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Position of the supply chest owned by this chunk (packed, y = feet),
-	 * or {@link #NO_POS}. Chosen columns are never walls or pad blocks.
+	 * or {@link #NO_POS}. Chosen columns are never walls, pad blocks or deck tiles.
 	 */
 	public long supplyChestPos(int chunkX, int chunkZ) {
 		if (Math.floorMod(hash(80, chunkX, chunkZ), SUPPLY_CHEST_CHUNK_MOD) != 0) {
@@ -646,7 +674,7 @@ public final class Level0Layout {
 			int lz = 2 + (int) ((stream >>> 33) % 12);
 			int x = chunkX * 16 + lx;
 			int z = chunkZ * 16 + lz;
-			if (!isWallColumn(x, z) && poolPadRoleAt(x, z) == 0) {
+			if (!isWallColumn(x, z) && poolPadRoleAt(x, z) == 0 && !isPoolDeckColumn(x, z)) {
 				return net.minecraft.core.BlockPos.asLong(x, FLOOR_Y + 1, z);
 			}
 		}

@@ -180,15 +180,29 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 							BlockState carpet, BlockState foundation, BlockState ceiling,
 							BlockState lightOn, BlockState lightOff, BlockState air, int x, int z,
 							int padRole, BlockState poolTile, BlockState seaLantern, BlockState portal) {
-		if (y == 62 || y == 63 || y == 70) {
+		if (y == 70) {
 			return foundation;
 		}
-		if (y == Level0Layout.FLOOR_Y) {
+		if (y == 62) {
+			// Sunken basin floor: a glowing ring around the drain.
 			if (padRole == 1) {
-				return seaLantern; // lamp ring of the Poolrooms entrance
+				return seaLantern;
 			}
 			if (padRole == 2) {
-				return poolTile;
+				return portal;
+			}
+			return foundation;
+		}
+		if (y == 63) {
+			return padRole != 0 ? Blocks.WATER.defaultBlockState() : foundation;
+		}
+		if (y == Level0Layout.FLOOR_Y) {
+			if (padRole != 0) {
+				// Open water with its surface flush with the surrounding floor.
+				return Blocks.WATER.defaultBlockState();
+			}
+			if (layout.isPoolDeckColumn(x, z)) {
+				return poolTile; // tiled deck rim around the basin
 			}
 			return carpet;
 		}
@@ -205,10 +219,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 				default -> ceiling;
 			};
 		}
-		// Interior band 65..68
-		if (!wall && padRole == 2 && y == 65) {
-			return portal;
-		}
+		// Interior band 65..68 (basins are open water below; nothing floats here).
 		return wall ? wallState : air;
 	}
 
@@ -241,10 +252,20 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 		for (int i = 0; i < height; i++) {
 			int y = minY + i;
 			BlockState state;
-			if (y == 62 || y == 63 || y == 70) {
+			if (y == 70) {
 				state = foundation;
+			} else if (y == 62) {
+				state = padRole == 1 ? seaLantern : padRole == 2 ? portal : foundation;
+			} else if (y == 63) {
+				state = padRole != 0 ? Blocks.WATER.defaultBlockState() : foundation;
 			} else if (y == Level0Layout.FLOOR_Y) {
-				state = padRole == 1 ? seaLantern : padRole == 2 ? poolTile : carpet;
+				if (padRole != 0) {
+					state = Blocks.WATER.defaultBlockState();
+				} else if (layout.isPoolDeckColumn(x, z)) {
+					state = poolTile;
+				} else {
+					state = carpet;
+				}
 			} else if (y == Level0Layout.CEILING_Y) {
 				if (wall) {
 					state = ceiling;
@@ -258,9 +279,7 @@ public class BackroomsChunkGenerator extends ChunkGenerator {
 					};
 				}
 			} else if (y >= 65 && y <= 68) {
-				state = !wall && padRole == 2 && y == 65
-						? portal
-						: wall ? wallState : air;
+				state = wall ? wallState : air;
 			} else {
 				state = air;
 			}
